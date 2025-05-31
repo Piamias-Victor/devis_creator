@@ -2,14 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { DevisLayout } from "./layout/DevisLayout";
-import { Client, Product, DevisLine } from "@/types";
+import { Client, Product } from "@/types";
 import { generateDevisNumber, calculateValidityDate } from "@/lib/utils/devisUtils";
 import { ClientStorage } from "@/lib/storage/clientStorage";
+import { PdfGenerator } from "@/lib/pdf/pdfGenerator";
 import { useDevis } from "@/lib/hooks/useDevis";
 
 /**
- * Composant principal de création de devis
- * Gestion d'état et logique métier
+ * Composant principal de création de devis - MODIFIÉ
+ * Utilise le nouveau système de calculs automatiques + export PDF
  */
 export function DevisCreation() {
   // État du devis avec valeurs par défaut pour SSR
@@ -20,17 +21,15 @@ export function DevisCreation() {
   const [saving, setSaving] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
-  // Hook de gestion du devis
+  // Hook de gestion du devis MODIFIÉ avec calculs automatiques
   const {
     lignes,
-    remiseGlobale,
-    setRemiseGlobale,
+    calculations,
     addLine,
     updateLine,
     deleteLine,
     duplicateLine,
-    clearAll,
-    totals
+    clearAll
   } = useDevis();
 
   // Initialisation côté client uniquement
@@ -52,27 +51,7 @@ export function DevisCreation() {
     }
   }, [isClient]);
 
-  // Raccourcis clavier (côté client uniquement)
-  useEffect(() => {
-    if (!isClient) return;
-    
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        switch (e.key) {
-          case 'a':
-            e.preventDefault();
-            handleAddProduct();
-            break;
-          case 's':
-            e.preventDefault();
-            handleSave();
-            break;
-        }
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    // Affichage loading pendant hydratation
+  // Affichage loading pendant hydratation
   if (!isClient) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
@@ -84,21 +63,18 @@ export function DevisCreation() {
     );
   }
 
-  return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isClient]);
-
   // Ajouter un produit (depuis recherche ou test)
   const handleAddProduct = (product?: Product) => {
     if (product) {
       // Produit sélectionné depuis la recherche
       addLine(product);
     } else {
-      // Produit de test (bouton rapide) - créer un produit temporaire
+      // Produit de test pour démonstration
       const testProduct: Product = {
         code: `TEST${lignes.length + 1}`,
         designation: `Produit de test ${lignes.length + 1}`,
         prixAchat: 8.50, // Prix d'achat pour calculer marge
-        prixVente: 10.50, // Prix de vente = prix HT affiché
+        prixVente: 12.75, // Prix de vente = prix HT affiché
         unite: "pièce",
         categorie: "Test",
         colissage: 12, // Pour calcul colis
@@ -106,21 +82,6 @@ export function DevisCreation() {
       };
       addLine(testProduct);
     }
-  };
-
-  // Mettre à jour une ligne
-  const handleUpdateLine = (id: string, updates: Partial<DevisLine>) => {
-    updateLine(id, updates);
-  };
-
-  // Supprimer une ligne
-  const handleDeleteLine = (id: string) => {
-    deleteLine(id);
-  };
-
-  // Dupliquer une ligne
-  const handleDuplicateLine = (id: string) => {
-    duplicateLine(id);
   };
 
   // Sauvegarder le devis
@@ -136,13 +97,11 @@ export function DevisCreation() {
       // Simulation sauvegarde (localStorage à implémenter)
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Ici on sauvegarderait en localStorage
       console.log("Devis sauvegardé:", {
         numero: numeroDevis,
         client: selectedClient,
         lignes,
-        dateCreation,
-        dateValidite
+        calculations
       });
       
       alert("Devis sauvegardé avec succès !");
@@ -167,9 +126,32 @@ export function DevisCreation() {
     window.location.href = "/";
   };
 
-  // Export PDF (placeholder)
-  const handleExportPDF = () => {
-    alert("Export PDF à implémenter en Phase 7");
+  // Export PDF - NOUVEAU
+  const handleExportPDF = async () => {
+    if (!selectedClient) {
+      alert("Veuillez sélectionner un client avant d'exporter");
+      return;
+    }
+
+    if (lignes.length === 0) {
+      alert("Ajoutez au moins un produit avant d'exporter");
+      return;
+    }
+
+    try {
+      await PdfGenerator.generateAndDownload({
+        numeroDevis,
+        dateCreation,
+        dateValidite,
+        client: selectedClient,
+        lignes,
+        calculations
+      });
+      
+    } catch (error) {
+      console.error("Erreur export PDF:", error);
+      alert("Erreur lors de l'export PDF. Veuillez réessayer.");
+    }
   };
 
   return (
@@ -179,16 +161,14 @@ export function DevisCreation() {
       dateCreation={dateCreation}
       dateValidite={dateValidite}
       lignes={lignes}
-      remiseGlobale={remiseGlobale}
-      onChangeRemiseGlobale={setRemiseGlobale}
+      calculations={calculations}
       onSave={handleSave}
       onCancel={handleCancel}
       onExportPDF={handleExportPDF}
       onAddProduct={handleAddProduct}
-      onUpdateLine={handleUpdateLine}
-      onDeleteLine={handleDeleteLine}
-      onDuplicateLine={handleDuplicateLine}
-      totals={totals}
+      onUpdateLine={updateLine}
+      onDeleteLine={deleteLine}
+      onDuplicateLine={duplicateLine}
       saving={saving}
     />
   );

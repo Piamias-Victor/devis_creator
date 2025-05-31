@@ -1,34 +1,27 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { DevisLine, Product } from "@/types";
-import { calculateLineTotal } from "@/lib/utils/devisUtils";
+import { useState, useCallback, useMemo } from "react";
+import { DevisLine, Product, DevisCalculations } from "@/types";
+import { calculateLineAmounts, calculateDevisTotal } from "@/lib/utils/calculUtils";
 
 interface UseDevisReturn {
   lignes: DevisLine[];
-  remiseGlobale: number;
-  setRemiseGlobale: (remise: number) => void;
+  calculations: DevisCalculations;
   addLine: (product: Product) => void;
   updateLine: (id: string, updates: Partial<DevisLine>) => void;
   deleteLine: (id: string) => void;
   duplicateLine: (id: string) => void;
   clearAll: () => void;
-  totals: {
-    totalHT: number;
-    totalTVA: number;
-    totalTTC: number;
-    nombreLignes: number;
-    quantiteTotale: number;
-  };
 }
 
 /**
  * Hook personnalisé pour la gestion d'état du devis
- * Logique métier centralisée et optimisée
+ * MODIFIÉ avec calculs automatiques temps réel
  */
 export function useDevis(initialLignes: DevisLine[] = []): UseDevisReturn {
-  const [lignes, setLignes] = useState<DevisLine[]>(initialLignes);
-  const [remiseGlobale, setRemiseGlobale] = useState<number>(0);
+  const [lignes, setLignes] = useState<DevisLine[]>(
+    initialLignes.map(ligne => calculateLineAmounts(ligne))
+  );
 
   // Générer un ID unique pour une ligne
   const generateLineId = useCallback((): string => {
@@ -42,21 +35,25 @@ export function useDevis(initialLignes: DevisLine[] = []): UseDevisReturn {
       productCode: product.code,
       designation: product.designation,
       quantite: 1,
-      prixUnitaire: product.prixVente, // Prix de vente = prix HT affiché
-      prixAchat: product.prixAchat, // Pour calcul marge
+      prixUnitaire: product.prixVente,
+      prixAchat: product.prixAchat,
       remise: 0,
       tva: product.tva,
-      colissage: product.colissage // Pour calcul nb colis
+      colissage: product.colissage
     };
     
-    setLignes(prev => [...prev, newLine]);
+    const calculatedLine = calculateLineAmounts(newLine);
+    setLignes(prev => [...prev, calculatedLine]);
   }, [generateLineId]);
 
-  // Mettre à jour une ligne
+  // Mettre à jour une ligne avec recalcul automatique
   const updateLine = useCallback((id: string, updates: Partial<DevisLine>) => {
-    setLignes(prev => prev.map(ligne => 
-      ligne.id === id ? { ...ligne, ...updates } : ligne
-    ));
+    setLignes(prev => prev.map(ligne => {
+      if (ligne.id !== id) return ligne;
+      
+      const updatedLine = { ...ligne, ...updates };
+      return calculateLineAmounts(updatedLine);
+    }));
   }, []);
 
   // Supprimer une ligne
@@ -69,10 +66,10 @@ export function useDevis(initialLignes: DevisLine[] = []): UseDevisReturn {
     const ligneToClone = lignes.find(l => l.id === id);
     if (!ligneToClone) return;
     
-    const clonedLine: DevisLine = {
+    const clonedLine = calculateLineAmounts({
       ...ligneToClone,
       id: generateLineId(),
-    };
+    });
     
     setLignes(prev => [...prev, clonedLine]);
   }, [lignes, generateLineId]);
@@ -86,35 +83,18 @@ export function useDevis(initialLignes: DevisLine[] = []): UseDevisReturn {
     }
   }, [lignes.length]);
 
-  // Calculs en temps réel
-  const totals = {
-    totalHT: lignes.reduce((sum, ligne) => {
-      return sum + calculateLineTotal(ligne.quantite, ligne.prixUnitaire, ligne.remise);
-    }, 0),
-    
-    totalTVA: lignes.reduce((sum, ligne) => {
-      const ligneHT = calculateLineTotal(ligne.quantite, ligne.prixUnitaire, ligne.remise);
-      return sum + (ligneHT * ligne.tva / 100);
-    }, 0),
-    
-    get totalTTC() {
-      return this.totalHT + this.totalTVA;
-    },
-    
-    nombreLignes: lignes.length,
-    
-    quantiteTotale: lignes.reduce((sum, ligne) => sum + ligne.quantite, 0)
-  };
+  // Calculs en temps réel mémorisés
+  const calculations = useMemo(() => {
+    return calculateDevisTotal(lignes);
+  }, [lignes]);
 
   return {
     lignes,
-    remiseGlobale,
-    setRemiseGlobale,
+    calculations,
     addLine,
     updateLine,
     deleteLine,
     duplicateLine,
     clearAll,
-    totals,
   };
 }

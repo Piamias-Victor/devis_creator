@@ -77,7 +77,6 @@ export function ProductsZone({
         onUpdateLine={onUpdateLine}
         onDeleteLine={onDeleteLine}
         onDuplicateLine={onDuplicateLine}
-        totals={totals}
         className="min-h-[400px]"
       />
 

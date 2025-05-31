@@ -15,7 +15,7 @@ interface ProductComboboxProps {
 
 /**
  * Combobox de recherche produits avec autocomplete
- * Dropdown glassmorphism avec recherche temps réel
+ * MODIFIÉ - Fix z-index dropdown au-dessus tableau
  */
 export function ProductCombobox({ 
   onSelect, 
@@ -114,10 +114,11 @@ export function ProductCombobox({
         </div>
       </div>
 
-      {/* Dropdown des résultats */}
+      {/* Dropdown des résultats - Z-INDEX ÉLEVÉ */}
       {isOpen && (
         <div className={cn(
-          "absolute top-full left-0 right-0 mt-2 z-50",
+          "absolute top-full left-0 right-0 mt-2",
+          "z-[9999]", // Z-INDEX TRÈS ÉLEVÉ pour passer au-dessus de tout
           "bg-gray-100 backdrop-blur-md border border-gray-200 rounded-xl",
           "shadow-2xl shadow-black/20 max-h-96 overflow-hidden",
           "supports-[backdrop-filter]:bg-gray-100"

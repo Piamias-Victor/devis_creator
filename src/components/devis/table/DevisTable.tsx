@@ -2,9 +2,8 @@
 
 import { cn } from "@/lib/utils/cn";
 import { DevisLine } from "@/types";
-import { DevisTableHeader } from "./DevisTableHeader";
 import { DevisTableRow } from "./DevisTableRow";
-import { formatPrice } from "@/lib/utils/devisUtils";
+import { formatEuros } from "@/lib/utils/calculUtils";
 import { Package } from "lucide-react";
 
 interface DevisTableProps {
@@ -12,56 +11,94 @@ interface DevisTableProps {
   onUpdateLine: (id: string, updates: Partial<DevisLine>) => void;
   onDeleteLine: (id: string) => void;
   onDuplicateLine: (id: string) => void;
-  totals: {
-    totalHT: number;
-    totalTVA: number;
-    totalTTC: number;
-  };
   className?: string;
 }
 
 /**
- * Tableau interactif des lignes de devis
- * Édition inline + calculs temps réel + glassmorphism
+ * Tableau devis MODIFIÉ - SANS backdrop-blur pour test z-index
+ * Code│Nom│Qté│Prix₳│Rem│Prix€│TVA%│Marge│HT│TVA│TTC│Actions
  */
 export function DevisTable({ 
   lignes, 
   onUpdateLine, 
   onDeleteLine, 
   onDuplicateLine,
-  totals,
   className 
 }: DevisTableProps) {
+
+  // Headers du tableau étendu
+  const columns = [
+    { key: "code", label: "Code", width: "w-20" },
+    { key: "designation", label: "Désignation", width: "flex-1 min-w-[200px]" },
+    { key: "quantite", label: "Qté", width: "w-16" },
+    { key: "prixAchat", label: "Prix ₳", width: "w-20" },
+    { key: "remise", label: "Rem", width: "w-16" },
+    { key: "prixVente", label: "Prix €", width: "w-20" },
+    { key: "tva", label: "TVA%", width: "w-16" },
+    { key: "marge", label: "Marge", width: "w-20" },
+    { key: "totalHT", label: "HT", width: "w-20" },
+    { key: "totalTVA", label: "TVA", width: "w-20" },
+    { key: "totalTTC", label: "TTC", width: "w-24" },
+    { key: "actions", label: "", width: "w-16" },
+  ];
 
   if (lignes.length === 0) {
     return (
       <div className={cn(
-        "rounded-xl border border-gray-200 bg-gray-50 backdrop-blur-md",
+        "rounded-xl border border-gray-200 bg-white/5",
         "p-12 text-center",
         className
       )}>
         <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-          Aucun produit dans le devis
+          Tableau des produits
         </h3>
         <p className="text-gray-600 dark:text-gray-400">
-          Utilisez la recherche ci-dessus pour ajouter des produits
+          Utilisez la recherche pour ajouter des produits au devis
         </p>
       </div>
     );
   }
 
+  // Calculs totaux
+  const totals = lignes.reduce((acc, ligne) => ({
+    totalHT: acc.totalHT + (ligne.totalHT || 0),
+    totalTVA: acc.totalTVA + (ligne.totalTVA || 0),
+    totalTTC: acc.totalTTC + (ligne.totalTTC || 0)
+  }), { totalHT: 0, totalTVA: 0, totalTTC: 0 });
+
   return (
     <div className={cn(
-      "rounded-xl border border-gray-200 bg-gray-50 backdrop-blur-md overflow-hidden",
+      "rounded-xl border border-gray-200 bg-white/5 overflow-hidden",
+      // SUPPRIMÉ: backdrop-blur-md
       className
     )}>
       <div className="overflow-x-auto">
-        <table className="w-full">
-          <DevisTableHeader />
+        <table className="w-full min-w-[1200px]">
+          {/* Header étendu */}
+          <thead className={cn(
+            "bg-gray-100/10 border-b border-gray-100/10"
+            // SUPPRIMÉ: backdrop-blur-sm
+          )}>
+            <tr>
+              {columns.map((column) => (
+                <th
+                  key={column.key}
+                  className={cn(
+                    "px-3 py-4 text-left text-xs font-semibold uppercase tracking-wider",
+                    "text-gray-700 dark:text-gray-300",
+                    column.width
+                  )}
+                >
+                  {column.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
           
+          {/* Body */}
           <tbody>
-            {lignes.map((ligne, index) => (
+            {lignes.map((ligne) => (
               <DevisTableRow
                 key={ligne.id}
                 ligne={ligne}
@@ -72,38 +109,25 @@ export function DevisTable({
             ))}
           </tbody>
           
-          {/* Footer avec totaux - 10 colonnes total */}
+          {/* Footer avec totaux */}
           <tfoot className={cn(
-            "bg-gray-100 backdrop-blur-sm border-t border-gray-200"
+            "bg-gray-100/20 border-t border-gray-200"
+            // SUPPRIMÉ: backdrop-blur-sm
           )}>
             <tr>
-              <td colSpan={8} className="px-4 py-4 text-right font-semibold text-gray-900 dark:text-gray-100">
-                Total HT:
+              <td colSpan={8} className="px-3 py-4 text-right font-semibold text-gray-900 dark:text-gray-100">
+                TOTAUX:
               </td>
-              <td className="px-4 py-4 font-bold text-gray-900 dark:text-gray-100">
-                {formatPrice(totals.totalHT)}
+              <td className="px-3 py-4 font-bold text-blue-600 dark:text-blue-400">
+                {formatEuros(totals.totalHT)}
               </td>
-              <td className="px-4 py-4"></td>
-            </tr>
-            
-            <tr>
-              <td colSpan={8} className="px-4 py-2 text-right font-semibold text-gray-900 dark:text-gray-100">
-                TVA (20%):
+              <td className="px-3 py-4 font-bold text-purple-600 dark:text-purple-400">
+                {formatEuros(totals.totalTVA)}
               </td>
-              <td className="px-4 py-2 font-bold text-gray-900 dark:text-gray-100">
-                {formatPrice(totals.totalTVA)}
+              <td className="px-3 py-4 font-bold text-green-600 dark:text-green-400 text-lg">
+                {formatEuros(totals.totalTTC)}
               </td>
-              <td className="px-4 py-2"></td>
-            </tr>
-            
-            <tr className="border-t border-red-400">
-              <td colSpan={8} className="px-4 py-4 text-right text-lg font-bold text-gray-900 dark:text-gray-100">
-                Total TTC:
-              </td>
-              <td className="px-4 py-4 text-lg font-bold text-blue-600 dark:text-blue-400">
-                {formatPrice(totals.totalTTC)}
-              </td>
-              <td className="px-4 py-4"></td>
+              <td className="px-3 py-4"></td>
             </tr>
           </tfoot>
         </table>
@@ -112,16 +136,14 @@ export function DevisTable({
       {/* Instructions d'utilisation */}
       <div className={cn(
         "px-6 py-4 border-t border-gray-200",
-        "bg-gray-50 text-sm text-gray-600 dark:text-gray-400"
+        "bg-gray-50/50 text-sm text-gray-600 dark:text-gray-400"
       )}>
         <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <span>💡 <strong>Double-cliquez</strong> sur Qté, Prix Achat, Remise ou Prix Vente pour éditer</span>
-            <span>⌨️ <strong>Enter</strong> valider • <strong>Escape</strong> annuler</span>
+          <div>
+            💡 <strong>Double-cliquez</strong> sur Qté, Prix, Remise pour éditer • <strong>Enter</strong> valider • <strong>Escape</strong> annuler
           </div>
-          
-          <div className="text-right">
-            <span>{lignes.length} ligne{lignes.length > 1 ? 's' : ''} • {totals.totalHT > 0 ? 'Modifiable' : 'Vide'}</span>
+          <div>
+            {lignes.length} produit{lignes.length > 1 ? 's' : ''} • Calculs automatiques
           </div>
         </div>
       </div>

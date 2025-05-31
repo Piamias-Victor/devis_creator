@@ -2,9 +2,12 @@
 
 import { cn } from "@/lib/utils/cn";
 import { DevisHeader } from "./DevisHeader";
-import { ProductsZone } from "./ProductsZone";
-import { DevisSidebar } from "./DevisSidebar";
-import { Client, DevisLine, Product } from "@/types";
+import { ProductCombobox } from "../../products/ProductCombobox";
+import { DevisTable } from "../table/DevisTable";
+import { MargeIndicators } from "../indicators/MargeIndicators";
+import { FinancialSummary } from "../summary/FinancialSummary";
+import { Client, DevisLine, Product, DevisCalculations } from "@/types";
+import { Plus } from "lucide-react";
 
 interface DevisLayoutProps {
   client: Client | null;
@@ -12,23 +15,20 @@ interface DevisLayoutProps {
   dateCreation: Date;
   dateValidite: Date;
   lignes: DevisLine[];
+  calculations: DevisCalculations;
   onSave: () => void;
   onCancel: () => void;
   onExportPDF: () => void;
   onAddProduct: (product?: Product) => void;
   onUpdateLine: (id: string, updates: Partial<DevisLine>) => void;
+  onDeleteLine: (id: string) => void;
   onDuplicateLine: (id: string) => void;
-  totals: {
-    totalHT: number;
-    totalTVA: number;
-    totalTTC: number;
-  };
   saving?: boolean;
 }
 
 /**
- * Layout principal de création de devis
- * Organisation desktop large écran optimisée
+ * Layout principal MODIFIÉ - Sans sidebar, pleine largeur
+ * Header > Indicateurs > Recherche > Tableau > Résumé
  */
 export function DevisLayout({
   client,
@@ -36,8 +36,7 @@ export function DevisLayout({
   dateCreation,
   dateValidite,
   lignes,
-  remiseGlobale,
-  onChangeRemiseGlobale,
+  calculations,
   onSave,
   onCancel,
   onExportPDF,
@@ -45,16 +44,12 @@ export function DevisLayout({
   onUpdateLine,
   onDeleteLine,
   onDuplicateLine,
-  totals,
   saving
 }: DevisLayoutProps) {
-  
-  // Calcul total TTC pour le header depuis totals
-  const totalTTC = totals.totalTTC;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
-      <div className="container mx-auto px-6 py-6 max-w-7xl">
+      <div className="container mx-auto px-6 py-6 max-w-full">
         <div className="space-y-6">
           {/* Header avec infos devis et actions */}
           <DevisHeader
@@ -62,41 +57,48 @@ export function DevisLayout({
             numeroDevis={numeroDevis}
             dateCreation={dateCreation}
             dateValidite={dateValidite}
-            totalTTC={totalTTC}
+            totalTTC={calculations.totalTTC}
             onSave={onSave}
             onCancel={onCancel}
             onExportPDF={onExportPDF}
             saving={saving}
           />
 
-          {/* Layout principal: Zone produits + Sidebar */}
-          <div className="flex gap-6 min-h-[600px]">
-            {/* Zone centrale des produits */}
-            <ProductsZone
-              lignes={lignes}
-              onAddProduct={onAddProduct}
-              onUpdateLine={onUpdateLine}
-              onDeleteLine={onDeleteLine}
-              onDuplicateLine={onDuplicateLine}
-              totals={totals}
-              className="flex-1"
-            />
+          {/* Indicateurs de marge horizontaux */}
+          <MargeIndicators calculations={calculations} />
 
-            {/* Sidebar fixe des calculs */}
-            <DevisSidebar
-              lignes={lignes}
-              remiseGlobale={remiseGlobale}
-              onChangeRemiseGlobale={onChangeRemiseGlobale}
-              totals={totals}
-              className="flex-shrink-0"
-            />
+          {/* Barre de recherche produits */}
+          <div className={cn(
+            "p-4 rounded-xl border border-gray-200",
+            "bg-white/5 backdrop-blur-md"
+          )}>
+            <div className="flex items-center space-x-4">
+              <ProductCombobox
+                onSelect={onAddProduct}
+                placeholder="🔍 Rechercher et ajouter un produit au devis..."
+                className="flex-1"
+              />
+              
+              
+            </div>
           </div>
+
+          {/* Tableau étendu pleine largeur */}
+          <DevisTable
+            lignes={lignes}
+            onUpdateLine={onUpdateLine}
+            onDeleteLine={onDeleteLine}
+            onDuplicateLine={onDuplicateLine}
+            className="min-h-[400px]"
+          />
+
+          {/* Résumé financier en bas */}
+          <FinancialSummary calculations={calculations} />
 
           {/* Footer avec mentions légales */}
           <div className={cn(
             "p-4 rounded-lg border border-white/10",
-            "bg-white/5 backdrop-blur-sm text-center",
-            "supports-[backdrop-filter]:bg-white/5"
+            "bg-white/5 backdrop-blur-sm text-center"
           )}>
             <p className="text-xs text-gray-500 dark:text-gray-400">
               Les prix s'entendent hors taxes. Devis valable {Math.ceil((dateValidite.getTime() - dateCreation.getTime()) / (1000 * 60 * 60 * 24))} jours.
