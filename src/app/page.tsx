@@ -1,10 +1,16 @@
+import { AuthGuard } from "@/components/auth/AuthGuard";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Dashboard } from "@/components/dashboard/Dashboard";
 
+/**
+ * Page d'accueil protégée par authentification
+ */
 export default function Home() {
   return (
-    <MainLayout>
-      <Dashboard />
-    </MainLayout>
+    <AuthGuard>
+      <MainLayout>
+        <Dashboard />
+      </MainLayout>
+    </AuthGuard>
   );
 }

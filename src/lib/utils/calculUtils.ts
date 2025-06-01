@@ -2,29 +2,37 @@ import { DevisLine, DevisCalculations } from "@/types";
 
 /**
  * Moteur de calculs temps réel pour devis
- * Toutes les formules centralisées
+ * MODIFIÉ - Gestion 4 décimales pour prix unitaires
  */
 
 /**
  * Calcule tous les montants d'une ligne
+ * Prix unitaires: 4 décimales / Totaux finaux: 2 décimales
  */
 export function calculateLineAmounts(ligne: DevisLine): DevisLine {
-  // Prix après remise
+  // Prix après remise (garder haute précision)
   const prixApresRemise = ligne.prixUnitaire * (1 - ligne.remise / 100);
   
-  // Totaux ligne
-  const totalHT = ligne.quantite * prixApresRemise;
-  const totalTVA = totalHT * (ligne.tva / 100);
-  const totalTTC = totalHT + totalTVA;
+  // Totaux ligne (calcul haute précision puis arrondi final)
+  const totalHTBrut = ligne.quantite * prixApresRemise;
+  const totalHT = Math.round(totalHTBrut * 100) / 100; // Arrondi final à 2 décimales
+  
+  const totalTVABrut = totalHT * (ligne.tva / 100);
+  const totalTVA = Math.round(totalTVABrut * 100) / 100; // Arrondi final à 2 décimales
+  
+  const totalTTC = Math.round((totalHT + totalTVA) * 100) / 100; // Arrondi final
   
   // Calculs marge
   let margeEuros = 0;
   let margePourcent = 0;
   
   if (ligne.prixAchat && ligne.prixAchat > 0) {
-    const margeUnitaire = prixApresRemise - ligne.prixAchat;
-    margeEuros = margeUnitaire * ligne.quantite;
-    margePourcent = (margeEuros / (ligne.prixAchat * ligne.quantite)) * 100;
+    const margeUnitaireBrute = prixApresRemise - ligne.prixAchat;
+    const margeEurosBrute = margeUnitaireBrute * ligne.quantite;
+    margeEuros = Math.round(margeEurosBrute * 100) / 100; // Arrondi final
+    
+    const coutTotalAchat = ligne.prixAchat * ligne.quantite;
+    margePourcent = coutTotalAchat > 0 ? (margeEuros / coutTotalAchat) * 100 : 0;
   }
   
   return {
@@ -94,15 +102,52 @@ export function getMargeColorClass(margePourcent: number): {
 }
 
 /**
- * Formatage
+ * Formatage prix avec 4 décimales pour saisie
+ */
+export function formatPriceInput(amount: number): string {
+  return amount.toFixed(4);
+}
+
+/**
+ * Formatage prix unitaire pour affichage (4 décimales)
+ */
+export function formatPriceUnit(amount: number): string {
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 4,
+    maximumFractionDigits: 4
+  }).format(amount);
+}
+
+/**
+ * Formatage prix final pour affichage (2 décimales)
  */
 export function formatEuros(amount: number): string {
   return new Intl.NumberFormat('fr-FR', {
     style: 'currency',
-    currency: 'EUR'
+    currency: 'EUR',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
   }).format(amount);
 }
 
+/**
+ * Formatage pourcentage
+ */
 export function formatPourcent(value: number): string {
   return `${value.toFixed(1)}%`;
+}
+
+/**
+ * Parse prix depuis string avec validation 4 décimales
+ */
+export function parsePriceInput(value: string): number {
+  const cleaned = value.replace(',', '.');
+  const parsed = parseFloat(cleaned);
+  
+  if (isNaN(parsed) || parsed < 0) return 0;
+  
+  // Limiter à 4 décimales max
+  return Math.round(parsed * 10000) / 10000;
 }

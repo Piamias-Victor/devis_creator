@@ -1,11 +1,11 @@
 import { Product } from "@/types";
-import { MOCK_PRODUCTS } from "@/data/products/mockProducts";
+import { REAL_PRODUCTS, REAL_PRODUCT_CATEGORIES } from "@/data/products/realProducts";
 
 const STORAGE_KEY = "devis_creator_products";
 
 /**
  * Gestionnaire de stockage localStorage pour les produits
- * Initialise avec base de données hardcodée
+ * NETTOYÉ - Utilise UNIQUEMENT la base réelle de 86 produits Molicare
  */
 export class ProductStorage {
   /**
@@ -13,19 +13,19 @@ export class ProductStorage {
    */
   static getProducts(): Product[] {
     // Vérification côté client uniquement
-    if (typeof window === "undefined") return MOCK_PRODUCTS;
+    if (typeof window === "undefined") return REAL_PRODUCTS;
     
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (!stored) {
-        // Initialiser avec les données hardcodées
-        this.saveProducts(MOCK_PRODUCTS);
-        return MOCK_PRODUCTS;
+        // Initialiser avec la base RÉELLE uniquement
+        this.saveProducts(REAL_PRODUCTS);
+        return REAL_PRODUCTS;
       }
       return JSON.parse(stored);
     } catch (error) {
       console.error("Erreur lecture produits:", error);
-      return MOCK_PRODUCTS;
+      return REAL_PRODUCTS;
     }
   }
 
@@ -43,7 +43,7 @@ export class ProductStorage {
   }
 
   /**
-   * Recherche produits par terme
+   * Recherche produits optimisée pour codes EAN 13 chiffres
    */
   static searchProducts(query: string): Product[] {
     const products = this.getProducts();
@@ -53,25 +53,23 @@ export class ProductStorage {
     
     return products.filter(product =>
       product.designation.toLowerCase().includes(searchTerm) ||
-      product.code.toLowerCase().includes(searchTerm) ||
+      product.code.includes(searchTerm) ||
       product.categorie.toLowerCase().includes(searchTerm)
     );
   }
 
   /**
-   * Filtre produits par catégorie
+   * Filtre produits par catégorie réelle
    */
   static filterByCategory(category: string): Product[] {
     const products = this.getProducts();
     if (!category) return products;
     
-    return products.filter(product => 
-      product.categorie.toLowerCase() === category.toLowerCase()
-    );
+    return products.filter(product => product.categorie === category);
   }
 
   /**
-   * Récupère un produit par son code
+   * Récupère un produit par son code EAN
    */
   static getProductByCode(code: string): Product | null {
     const products = this.getProducts();
@@ -79,16 +77,14 @@ export class ProductStorage {
   }
 
   /**
-   * Récupère les catégories disponibles
+   * Récupère les catégories réelles Molicare
    */
   static getCategories(): string[] {
-    const products = this.getProducts();
-    const categories = [...new Set(products.map(p => p.categorie))];
-    return categories.sort();
+    return [...REAL_PRODUCT_CATEGORIES];
   }
 
   /**
-   * Tri des produits
+   * Tri des produits avec gestion des marges réelles
    */
   static sortProducts(products: Product[], sortBy: 'name' | 'price' | 'margin'): Product[] {
     return [...products].sort((a, b) => {
@@ -100,7 +96,7 @@ export class ProductStorage {
         case 'margin':
           const margeA = ((a.prixVente - a.prixAchat) / a.prixAchat) * 100;
           const margeB = ((b.prixVente - b.prixAchat) / b.prixAchat) * 100;
-          return margeB - margeA; // Tri décroissant des marges
+          return margeB - margeA;
         default:
           return 0;
       }
@@ -108,7 +104,7 @@ export class ProductStorage {
   }
 
   /**
-   * Statistiques des produits
+   * Statistiques de la base réelle Molicare
    */
   static getProductStats(): {
     total: number;
@@ -116,10 +112,10 @@ export class ProductStorage {
     margeGlobaleMoyenne: number;
     prixMoyen: number;
   } {
-    const products = this.getProducts();
+    const products = REAL_PRODUCTS;
     
     const total = products.length;
-    const categories = this.getCategories().length;
+    const categories = REAL_PRODUCT_CATEGORIES.length;
     
     const margeGlobaleMoyenne = products.reduce((sum, product) => {
       const marge = ((product.prixVente - product.prixAchat) / product.prixAchat) * 100;

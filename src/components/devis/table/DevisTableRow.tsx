@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils/cn";
 import { DevisLine } from "@/types";
-import { formatEuros, formatPourcent, getMargeColorClass } from "@/lib/utils/calculUtils";
+import { formatEuros, formatPourcent, getMargeColorClass, formatPriceUnit, parsePriceInput } from "@/lib/utils/calculUtils";
 import { Trash2, Copy, Package } from "lucide-react";
 
 interface DevisTableRowProps {
@@ -14,7 +14,7 @@ interface DevisTableRowProps {
 }
 
 /**
- * Ligne tableau étendue - MODIFIÉE
+ * Ligne tableau étendue - MODIFIÉE avec 4 décimales
  * Code│Nom│Qté│Prix₳│Rem│Prix€│TVA%│Marge│HT│TVA│TTC│Actions (12 colonnes)
  */
 export function DevisTableRow({ ligne, onUpdate, onDelete, onDuplicate }: DevisTableRowProps) {
@@ -30,22 +30,36 @@ export function DevisTableRow({ ligne, onUpdate, onDelete, onDuplicate }: DevisT
     }
   }, [editingField]);
 
-  // Commencer l'édition
+  // Commencer l'édition avec formatage adapté
   const startEdit = (field: string, currentValue: number) => {
     setEditingField(field);
-    setEditValue(currentValue.toString());
+    
+    // Format selon le type de champ
+    if (field === "prixAchat" || field === "prixUnitaire") {
+      setEditValue(currentValue.toFixed(4)); // 4 décimales pour prix
+    } else {
+      setEditValue(currentValue.toString());
+    }
   };
 
-  // Sauvegarder l'édition
+  // Sauvegarder l'édition avec validation
   const saveEdit = () => {
     if (!editingField) return;
     
-    const numValue = parseFloat(editValue);
-    if (isNaN(numValue) || numValue < 0) {
-      cancelEdit();
-      return;
+    let numValue: number;
+    
+    // Parse selon type de champ
+    if (editingField === "prixAchat" || editingField === "prixUnitaire") {
+      numValue = parsePriceInput(editValue); // Validation 4 décimales
+    } else {
+      numValue = parseFloat(editValue.replace(',', '.'));
+      if (isNaN(numValue) || numValue < 0) {
+        cancelEdit();
+        return;
+      }
     }
 
+    // Validations spécifiques
     if (editingField === "quantite" && numValue === 0) {
       cancelEdit();
       return;
@@ -128,7 +142,7 @@ export function DevisTableRow({ ligne, onUpdate, onDelete, onDuplicate }: DevisT
         )}
       </td>
 
-      {/* 4. Prix d'achat - Éditable */}
+      {/* 4. Prix d'achat - Éditable 4 décimales */}
       <td className="px-3 py-3">
         {editingField === "prixAchat" ? (
           <input
@@ -138,15 +152,16 @@ export function DevisTableRow({ ligne, onUpdate, onDelete, onDuplicate }: DevisT
             onChange={(e) => setEditValue(e.target.value)}
             onKeyDown={handleKeyDown}
             onBlur={saveEdit}
-            className="w-16 px-1 py-1 text-xs rounded border bg-green-100/20 border-green-500/50"
+            placeholder="0,0000"
+            className="w-20 px-1 py-1 text-xs rounded border bg-green-100/20 border-green-500/50"
           />
         ) : (
           <div
             onDoubleClick={() => startEdit("prixAchat", ligne.prixAchat || 0)}
             className="text-xs cursor-pointer px-1 py-1 rounded hover:bg-green-100/30 transition-colors"
-            title="Double-cliquer pour modifier"
+            title="Double-cliquer pour modifier (4 décimales)"
           >
-            {ligne.prixAchat ? formatEuros(ligne.prixAchat) : "–"}
+            {ligne.prixAchat ? formatPriceUnit(ligne.prixAchat) : "–"}
           </div>
         )}
       </td>
@@ -174,7 +189,7 @@ export function DevisTableRow({ ligne, onUpdate, onDelete, onDuplicate }: DevisT
         )}
       </td>
 
-      {/* 6. Prix de vente après remise - Éditable */}
+      {/* 6. Prix de vente après remise - Éditable 4 décimales */}
       <td className="px-3 py-3">
         {editingField === "prixUnitaire" ? (
           <input
@@ -184,15 +199,16 @@ export function DevisTableRow({ ligne, onUpdate, onDelete, onDuplicate }: DevisT
             onChange={(e) => setEditValue(e.target.value)}
             onKeyDown={handleKeyDown}
             onBlur={saveEdit}
-            className="w-16 px-1 py-1 text-xs rounded border bg-purple-100/20 border-purple-500/50"
+            placeholder="0,0000"
+            className="w-20 px-1 py-1 text-xs rounded border bg-purple-100/20 border-purple-500/50"
           />
         ) : (
           <div
             onDoubleClick={() => startEdit("prixUnitaire", ligne.prixUnitaire)}
             className="text-xs cursor-pointer px-1 py-1 rounded hover:bg-purple-100/30 transition-colors"
-            title="Double-cliquer pour modifier"
+            title="Double-cliquer pour modifier (4 décimales)"
           >
-            {formatEuros(ligne.prixApresRemise || ligne.prixUnitaire)}
+            {formatPriceUnit(ligne.prixApresRemise || ligne.prixUnitaire)}
           </div>
         )}
       </td>
@@ -216,21 +232,21 @@ export function DevisTableRow({ ligne, onUpdate, onDelete, onDuplicate }: DevisT
         </div>
       </td>
 
-      {/* 9. Total HT */}
+      {/* 9. Total HT - 2 décimales final */}
       <td className="px-3 py-3">
         <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
           {formatEuros(ligne.totalHT || 0)}
         </span>
       </td>
 
-      {/* 10. Total TVA */}
+      {/* 10. Total TVA - 2 décimales final */}
       <td className="px-3 py-3">
         <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">
           {formatEuros(ligne.totalTVA || 0)}
         </span>
       </td>
 
-      {/* 11. Total TTC */}
+      {/* 11. Total TTC - 2 décimales final */}
       <td className="px-3 py-3">
         <span className="text-sm font-bold text-green-600 dark:text-green-400">
           {formatEuros(ligne.totalTTC || 0)}
