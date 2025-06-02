@@ -1,9 +1,9 @@
 import { Product } from "@/types";
 
 /**
- * Base de données produits réelle EHPAD/Pharmacie
+ * Base de données produits réelle EHPAD/Pharmacie COMPLÈTE
+ * 86 produits Molicare + 12 produits Seni = 98 produits total
  * Convertie depuis Excel avec prix réels
- * 86 produits Molicare complets
  */
 export const REAL_PRODUCTS: Product[] = [
   // Incontinence - Slips de fixation - Molicare Premium FIXPANTS - Btes de 3
@@ -786,10 +786,164 @@ export const REAL_PRODUCTS: Product[] = [
     categorie: "Incontinence - Protections anatomiques",
     colissage: 9,
     tva: 20
+  },
+
+  // =====================================================================
+  // NOUVEAUX PRODUITS SENI - INTÉGRATION COMPLÈTE
+  // =====================================================================
+
+  // Seni Active Classic - Sous-vêtements absorbants équivalents Molicare Mobile
+  {
+    code: "SE-096-SM30-AC1",
+    designation: "Seni Active Classic Small - 30 pièces",
+    prixAchat: 0.53,
+    prixVente: 0.532,
+    unite: "pièce",
+    categorie: "Incontinence - Sous-vêtements absorbants",
+    colissage: 4,
+    tva: 20
+  },
+  {
+    code: "SE-096-ME30-AC1",
+    designation: "Seni Active Classic Medium - 30 pièces",
+    prixAchat: 0.50,
+    prixVente: 0.504,
+    unite: "pièce",
+    categorie: "Incontinence - Sous-vêtements absorbants",
+    colissage: 4,
+    tva: 20
+  },
+  {
+    code: "SE-096-LA30-AC1",
+    designation: "Seni Active Classic Large - 30 pièces",
+    prixAchat: 0.55,
+    prixVente: 0.552,
+    unite: "pièce",
+    categorie: "Incontinence - Sous-vêtements absorbants",
+    colissage: 4,
+    tva: 20
+  },
+  {
+    code: "SE-096-XL30-AC1",
+    designation: "Seni Active Classic Extra Large - 30 pièces",
+    prixAchat: 0.65,
+    prixVente: 0.647,
+    unite: "pièce",
+    categorie: "Incontinence - Sous-vêtements absorbants",
+    colissage: 4,
+    tva: 20
+  },
+
+  // Seni Classic Basic - Changes complets équivalents Molicare Elastic
+  {
+    code: "SE-094-SM30-CB1",
+    designation: "Seni Classic Basic Small - 30 pièces",
+    prixAchat: 0.32,
+    prixVente: 0.318,
+    unite: "pièce",
+    categorie: "Incontinence - Changes complets",
+    colissage: 3,
+    tva: 20
+  },
+  {
+    code: "SE-094-ME30-CB1",
+    designation: "Seni Classic Basic Medium - 30 pièces",
+    prixAchat: 0.39,
+    prixVente: 0.386,
+    unite: "pièce",
+    categorie: "Incontinence - Changes complets",
+    colissage: 3,
+    tva: 20
+  },
+  {
+    code: "SE-094-LA30-CB1",
+    designation: "Seni Classic Basic Large - 30 pièces",
+    prixAchat: 0.45,
+    prixVente: 0.452,
+    unite: "pièce",
+    categorie: "Incontinence - Changes complets",
+    colissage: 3,
+    tva: 20
+  },
+  {
+    code: "SE-094-XL30-CB1",
+    designation: "Seni Classic Basic Extra Large - 30 pièces",
+    prixAchat: 0.48,
+    prixVente: 0.478,
+    unite: "pièce",
+    categorie: "Incontinence - Changes complets",
+    colissage: 3,
+    tva: 20
+  },
+
+  // Seni Classic Plus - Changes complets renforcés
+  {
+    code: "SE-094-SM30-SC2",
+    designation: "Seni Classic Plus Small - 30 pièces",
+    prixAchat: 0.35,
+    prixVente: 0.349,
+    unite: "pièce",
+    categorie: "Incontinence - Changes complets",
+    colissage: 3,
+    tva: 20
+  },
+  {
+    code: "SE-094-ME30-CP2",
+    designation: "Seni Classic Plus Medium - 30 pièces",
+    prixAchat: 0.42,
+    prixVente: 0.423,
+    unite: "pièce",
+    categorie: "Incontinence - Changes complets",
+    colissage: 3,
+    tva: 20
+  },
+  {
+    code: "SE-094-LA30-SC2",
+    designation: "Seni Classic Plus Large - 30 pièces",
+    prixAchat: 0.50,
+    prixVente: 0.500,
+    unite: "pièce",
+    categorie: "Incontinence - Changes complets",
+    colissage: 3,
+    tva: 20
+  },
+  {
+    code: "SE-094-XL30-SC2",
+    designation: "Seni Classic Plus Extra Large - 30 pièces",
+    prixAchat: 0.53,
+    prixVente: 0.528,
+    unite: "pièce",
+    categorie: "Incontinence - Changes complets",
+    colissage: 3,
+    tva: 20
+  },
+
+  // Seni Super Plus XXL - Format spécial grande taille
+  {
+    code: "SE-094-2X10-G02",
+    designation: "Seni Super Plus XXL - 10 pièces",
+    prixAchat: 0.78,
+    prixVente: 0.778,
+    unite: "pièce",
+    categorie: "Incontinence - Changes complets",
+    colissage: 2,
+    tva: 20
+  },
+
+  // Seni Soft Basic - Alèses équivalent Molicare Bed Mat
+  {
+    code: "SE-091-SB25-D03",
+    designation: "Seni Soft Basic 90x60 cm - 25 pièces",
+    prixAchat: 0.27,
+    prixVente: 0.269,
+    unite: "pièce",
+    categorie: "Alèses",
+    colissage: 4,
+    tva: 20
   }
 ];
 
-// Export des catégories réelles
+// Export des catégories réelles MISES À JOUR
 export const REAL_PRODUCT_CATEGORIES = [
   "Incontinence - Slips de fixation",
   "Incontinence - Protections anatomiques", 
