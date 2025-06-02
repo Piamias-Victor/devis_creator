@@ -109,7 +109,7 @@ export function ProductSearch({ onSelect, className }: ProductSearchProps) {
               )}
             >
               <option value="">Toutes catégories</option>
-              {categories.map((category) => (
+              {categories.map((category: string) => (
                 <option key={category} value={category}>
                   {category}
                 </option>

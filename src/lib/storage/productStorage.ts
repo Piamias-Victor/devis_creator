@@ -63,7 +63,7 @@ export class ProductStorage {
     return products.filter(product =>
       product.designation.toLowerCase().includes(searchTerm) ||
       product.code.includes(searchTerm) ||
-      product.categorie.toLowerCase().includes(searchTerm)
+      (product.categorie || "").toLowerCase().includes(searchTerm) // Guard pour undefined
     );
   }
 
@@ -74,7 +74,7 @@ export class ProductStorage {
     const products = this.getProducts();
     if (!category) return products;
     
-    return products.filter(product => product.categorie === category);
+    return products.filter(product => (product.categorie || "") === category); // Guard pour undefined
   }
 
   /**
@@ -101,10 +101,10 @@ export class ProductStorage {
         case 'name':
           return a.designation.localeCompare(b.designation);
         case 'price':
-          return a.prixVente - b.prixVente;
+          return (a.prixVente || 0) - (b.prixVente || 0); // Guard pour undefined
         case 'margin':
-          const margeA = ((a.prixVente - a.prixAchat) / a.prixAchat) * 100;
-          const margeB = ((b.prixVente - b.prixAchat) / b.prixAchat) * 100;
+          const margeA = a.prixVente && a.prixAchat ? ((a.prixVente - a.prixAchat) / a.prixAchat) * 100 : 0;
+          const margeB = b.prixVente && b.prixAchat ? ((b.prixVente - b.prixAchat) / b.prixAchat) * 100 : 0;
           return margeB - margeA;
         default:
           return 0;
@@ -127,11 +127,12 @@ export class ProductStorage {
     const categories = REAL_PRODUCT_CATEGORIES.length;
     
     const margeGlobaleMoyenne = products.reduce((sum, product) => {
+      if (!product.prixVente || !product.prixAchat) return sum; // Guard pour undefined
       const marge = ((product.prixVente - product.prixAchat) / product.prixAchat) * 100;
       return sum + marge;
     }, 0) / products.length;
     
-    const prixMoyen = products.reduce((sum, product) => sum + product.prixVente, 0) / products.length;
+    const prixMoyen = products.reduce((sum, product) => sum + (product.prixVente || 0), 0) / products.length;
     
     return {
       total,

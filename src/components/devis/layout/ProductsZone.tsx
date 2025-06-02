@@ -65,7 +65,7 @@ export function ProductsZone({
       {/* Barre de recherche produits */}
       <div className="flex gap-3">
         <ProductCombobox
-          onSelect={handleSelectProduct}
+          onSelect={handleSelectProduct as any}
           placeholder="🔍 Rechercher et ajouter un produit..."
           className="flex-1"
         />

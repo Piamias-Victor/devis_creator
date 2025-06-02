@@ -1,0 +1,674 @@
+[96msrc/components/products/ProductCard.tsx[0m:[93m20[0m:[93m32[0m - [91merror[0m[90m TS2345: [0mArgument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+
+[7m20[0m   const marge = calculateMarge(product.prixVente, product.prixAchat);
+[7m  [0m [91m                               ~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/products/ProductCard.tsx[0m:[93m64[0m:[93m45[0m - [91merror[0m[90m TS2345: [0mArgument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+
+[7m64[0m               {product.code} • {formatPrice(product.prixVente)}
+[7m  [0m [91m                                            ~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/products/ProductCard.tsx[0m:[93m104[0m:[93m36[0m - [91merror[0m[90m TS2339: [0mProperty 'categorie' does not exist on type 'Product'.
+
+[7m104[0m           getCategoryColor(product.categorie)
+[7m   [0m [91m                                   ~~~~~~~~~[0m
+
+[96msrc/components/products/ProductCard.tsx[0m:[93m106[0m:[93m20[0m - [91merror[0m[90m TS2339: [0mProperty 'categorie' does not exist on type 'Product'.
+
+[7m106[0m           {product.categorie}
+[7m   [0m [91m                   ~~~~~~~~~[0m
+
+[96msrc/components/products/ProductCard.tsx[0m:[93m115[0m:[93m26[0m - [91merror[0m[90m TS2345: [0mArgument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+
+[7m115[0m             {formatPrice(product.prixVente)}
+[7m   [0m [91m                         ~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/products/ProductCard.tsx[0m:[93m117[0m:[93m61[0m - [91merror[0m[90m TS2339: [0mProperty 'unite' does not exist on type 'Product'.
+
+[7m117[0m           <p className="text-xs text-gray-500">par {product.unite}</p>
+[7m   [0m [91m                                                            ~~~~~[0m
+
+[96msrc/components/products/ProductSearch.tsx[0m:[93m23[0m:[93m5[0m - [91merror[0m[90m TS2339: [0mProperty 'selectedCategory' does not exist on type 'UseProductsReturn'.
+
+[7m23[0m     selectedCategory,
+[7m  [0m [91m    ~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/products/ProductSearch.tsx[0m:[93m24[0m:[93m5[0m - [91merror[0m[90m TS2339: [0mProperty 'sortBy' does not exist on type 'UseProductsReturn'.
+
+[7m24[0m     sortBy,
+[7m  [0m [91m    ~~~~~~[0m
+
+[96msrc/components/products/ProductSearch.tsx[0m:[93m26[0m:[93m5[0m - [91merror[0m[90m TS2339: [0mProperty 'setSelectedCategory' does not exist on type 'UseProductsReturn'.
+
+[7m26[0m     setSelectedCategory,
+[7m  [0m [91m    ~~~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/components/products/ProductSearch.tsx[0m:[93m27[0m:[93m5[0m - [91merror[0m[90m TS2339: [0mProperty 'setSortBy' does not exist on type 'UseProductsReturn'.
+
+[7m27[0m     setSortBy,
+[7m  [0m [91m    ~~~~~~~~~[0m
+
+[96msrc/components/products/ProductSearch.tsx[0m:[93m28[0m:[93m5[0m - [91merror[0m[90m TS2339: [0mProperty 'categories' does not exist on type 'UseProductsReturn'.
+
+[7m28[0m     categories,
+[7m  [0m [91m    ~~~~~~~~~~[0m
+
+[96msrc/components/products/ProductSearch.tsx[0m:[93m49[0m:[93m47[0m - [91merror[0m[90m TS2339: [0mProperty 'categories' does not exist on type '{ total: number; margeGlobaleMoyenne: number; prixMoyen: number; }'.
+
+[7m49[0m               {stats.total} produits • {stats.categories} catégories
+[7m  [0m [91m                                              ~~~~~~~~~~[0m
+
+[96msrc/components/products/ProductSearch.tsx[0m:[93m112[0m:[93m32[0m - [91merror[0m[90m TS7006: [0mParameter 'category' implicitly has an 'any' type.
+
+[7m112[0m               {categories.map((category) => (
+[7m   [0m [91m                               ~~~~~~~~[0m
+
+[96msrc/data/products/mockProducts.ts[0m:[93m14[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m14[0m     unite: "pièce",
+[7m  [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/mockProducts.ts[0m:[93m24[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m24[0m     unite: "pièce",
+[7m  [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/mockProducts.ts[0m:[93m34[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m34[0m     unite: "pièce",
+[7m  [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/mockProducts.ts[0m:[93m44[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m44[0m     unite: "pièce",
+[7m  [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/mockProducts.ts[0m:[93m54[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m54[0m     unite: "pièce",
+[7m  [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/mockProducts.ts[0m:[93m64[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m64[0m     unite: "pièce",
+[7m  [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/mockProducts.ts[0m:[93m74[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m74[0m     unite: "pièce",
+[7m  [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/mockProducts.ts[0m:[93m84[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m84[0m     unite: "pièce",
+[7m  [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/mockProducts.ts[0m:[93m94[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m94[0m     unite: "pièce",
+[7m  [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/mockProducts.ts[0m:[93m106[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m106[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/mockProducts.ts[0m:[93m116[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m116[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/mockProducts.ts[0m:[93m126[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m126[0m     unite: "boîte 100",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/mockProducts.ts[0m:[93m136[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m136[0m     unite: "boîte 100",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/mockProducts.ts[0m:[93m148[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m148[0m     unite: "flacon",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/mockProducts.ts[0m:[93m158[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m158[0m     unite: "boîte",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/mockProducts.ts[0m:[93m168[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m168[0m     unite: "flacon",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/mockProducts.ts[0m:[93m178[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m178[0m     unite: "boîte",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/mockProducts.ts[0m:[93m188[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m188[0m     unite: "rouleau",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/mockProducts.ts[0m:[93m198[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m198[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m15[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m15[0m     unite: "pièce",
+[7m  [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m25[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m25[0m     unite: "pièce",
+[7m  [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m35[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m35[0m     unite: "pièce",
+[7m  [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m45[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m45[0m     unite: "pièce",
+[7m  [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m55[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m55[0m     unite: "pièce",
+[7m  [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m67[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m67[0m     unite: "pièce",
+[7m  [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m77[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m77[0m     unite: "pièce",
+[7m  [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m87[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m87[0m     unite: "pièce",
+[7m  [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m97[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m97[0m     unite: "pièce",
+[7m  [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m107[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m107[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m117[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m117[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m129[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m129[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m139[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m139[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m149[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m149[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m159[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m159[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m169[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m169[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m181[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m181[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m191[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m191[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m201[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m201[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m211[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m211[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m223[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m223[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m233[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m233[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m243[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m243[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m253[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m253[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m265[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m265[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m275[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m275[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m285[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m285[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m295[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m295[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m307[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m307[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m317[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m317[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m327[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m327[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m339[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m339[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m349[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m349[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m359[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m359[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m369[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m369[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m379[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m379[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m389[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m389[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m399[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m399[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m409[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m409[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m419[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m419[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m429[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m429[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m439[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m439[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m449[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m449[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m459[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m459[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m469[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m469[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m479[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m479[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m489[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m489[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m501[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m501[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m511[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m511[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m521[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m521[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m531[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m531[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m541[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m541[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m551[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m551[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m561[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m561[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m571[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m571[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m581[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m581[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m591[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m591[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m601[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m601[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m611[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m611[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m621[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m621[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m631[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m631[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m641[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m641[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m651[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m651[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m661[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m661[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m673[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m673[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m683[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m683[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m693[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m693[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m703[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m703[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m713[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m713[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m723[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m723[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m733[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m733[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m743[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m743[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m753[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m753[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m765[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m765[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m775[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m775[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m785[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m785[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m801[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m801[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m811[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m811[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m821[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m821[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m831[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m831[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m843[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m843[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m853[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m853[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m863[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m863[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m873[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m873[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m885[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m885[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m895[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m895[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m905[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m905[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m915[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m915[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m927[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m927[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/data/products/realProducts.ts[0m:[93m939[0m:[93m5[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'unite' does not exist in type 'Product'.
+
+[7m939[0m     unite: "pièce",
+[7m   [0m [91m    ~~~~~[0m
+
+[96msrc/lib/hooks/useDevis.ts[0m:[93m57[0m:[93m7[0m - [91merror[0m[90m TS2322: [0mType 'number | undefined' is not assignable to type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+
+[7m57[0m       prixUnitaire: product.prixVente,
+[7m  [0m [91m      ~~~~~~~~~~~~[0m
+
+  [96msrc/types/index.ts[0m:[93m25[0m:[93m3[0m
+    [7m25[0m   prixUnitaire: number; // Prix de vente base
+    [7m  [0m [96m  ~~~~~~~~~~~~[0m
+    The expected type comes from property 'prixUnitaire' which is declared here on type 'DevisLine'
+
+[96msrc/lib/storage/productStorage.ts[0m:[93m66[0m:[93m15[0m - [91merror[0m[90m TS2339: [0mProperty 'categorie' does not exist on type 'Product'.
+
+[7m66[0m       product.categorie.toLowerCase().includes(searchTerm)
+[7m  [0m [91m              ~~~~~~~~~[0m
+
+[96msrc/lib/storage/productStorage.ts[0m:[93m77[0m:[93m47[0m - [91merror[0m[90m TS2339: [0mProperty 'categorie' does not exist on type 'Product'.
+
+[7m77[0m     return products.filter(product => product.categorie === category);
+[7m  [0m [91m                                              ~~~~~~~~~[0m
+
+[96msrc/lib/storage/productStorage.ts[0m:[93m104[0m:[93m18[0m - [91merror[0m[90m TS18048: [0m'a.prixVente' is possibly 'undefined'.
+
+[7m104[0m           return a.prixVente - b.prixVente;
+[7m   [0m [91m                 ~~~~~~~~~~~[0m
+
+[96msrc/lib/storage/productStorage.ts[0m:[93m104[0m:[93m32[0m - [91merror[0m[90m TS18048: [0m'b.prixVente' is possibly 'undefined'.
+
+[7m104[0m           return a.prixVente - b.prixVente;
+[7m   [0m [91m                               ~~~~~~~~~~~[0m
+
+[96msrc/lib/storage/productStorage.ts[0m:[93m106[0m:[93m28[0m - [91merror[0m[90m TS18048: [0m'a.prixVente' is possibly 'undefined'.
+
+[7m106[0m           const margeA = ((a.prixVente - a.prixAchat) / a.prixAchat) * 100;
+[7m   [0m [91m                           ~~~~~~~~~~~[0m
+
+[96msrc/lib/storage/productStorage.ts[0m:[93m107[0m:[93m28[0m - [91merror[0m[90m TS18048: [0m'b.prixVente' is possibly 'undefined'.
+
+[7m107[0m           const margeB = ((b.prixVente - b.prixAchat) / b.prixAchat) * 100;
+[7m   [0m [91m                           ~~~~~~~~~~~[0m
+
+[96msrc/lib/storage/productStorage.ts[0m:[93m130[0m:[93m23[0m - [91merror[0m[90m TS18048: [0m'product.prixVente' is possibly 'undefined'.
+
+[7m130[0m       const marge = ((product.prixVente - product.prixAchat) / product.prixAchat) * 100;
+[7m   [0m [91m                      ~~~~~~~~~~~~~~~~~[0m
+
+[96msrc/lib/storage/productStorage.ts[0m:[93m134[0m:[93m63[0m - [91merror[0m[90m TS18048: [0m'product.prixVente' is possibly 'undefined'.
+
+[7m134[0m     const prixMoyen = products.reduce((sum, product) => sum + product.prixVente, 0) / products.length;
+[7m   [0m [91m                                                              ~~~~~~~~~~~~~~~~~[0m
+
+
+Found 131 errors in 6 files.
+
+Errors  Files
+     6  src/components/products/ProductCard.tsx[90m:20[0m
+     7  src/components/products/ProductSearch.tsx[90m:23[0m
+    19  src/data/products/mockProducts.ts[90m:14[0m
+    90  src/data/products/realProducts.ts[90m:15[0m
+     1  src/lib/hooks/useDevis.ts[90m:57[0m
+     8  src/lib/storage/productStorage.ts[90m:66[0m

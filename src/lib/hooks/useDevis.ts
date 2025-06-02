@@ -54,7 +54,7 @@ export function useDevis(initialDevisId?: string): UseDevisReturn {
       productCode: product.code,
       designation: product.designation,
       quantite: 1,
-      prixUnitaire: product.prixVente,
+      prixUnitaire: product.prixVente || 0, // Guard pour undefined
       prixAchat: product.prixAchat,
       remise: 0,
       tva: product.tva,

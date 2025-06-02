@@ -17,7 +17,13 @@ interface ProductCardProps {
  * Affichage détaillé + action sélection
  */
 export function ProductCard({ product, onSelect, className, compact = false }: ProductCardProps) {
-  const marge = calculateMarge(product.prixVente, product.prixAchat);
+  // Guards pour éviter undefined
+  const prixVente = product.prixVente || 0;
+  const prixAchat = product.prixAchat || 0;
+  const unite = product.unite || "pièce";
+  const categorie = product.categorie || "Autre";
+  
+  const marge = calculateMarge(prixVente, prixAchat);
   
   // Couleur de la marge selon performance
   const getMargeColor = (margePourcent: number) => {
@@ -61,7 +67,7 @@ export function ProductCard({ product, onSelect, className, compact = false }: P
               {product.designation}
             </p>
             <p className="text-xs text-gray-600 dark:text-gray-400">
-              {product.code} • {formatPrice(product.prixVente)}
+              {product.code} • {formatPrice(prixVente)}
             </p>
           </div>
           <Plus className="w-4 h-4 text-blue-600 dark:text-blue-400 ml-2 flex-shrink-0" />
@@ -101,9 +107,9 @@ export function ProductCard({ product, onSelect, className, compact = false }: P
 
         <span className={cn(
           "px-3 py-1 rounded-full text-xs font-medium border",
-          getCategoryColor(product.categorie)
+          getCategoryColor(categorie)
         )}>
-          {product.categorie}
+          {categorie}
         </span>
       </div>
 
@@ -112,9 +118,9 @@ export function ProductCard({ product, onSelect, className, compact = false }: P
         <div>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Prix de vente</p>
           <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
-            {formatPrice(product.prixVente)}
+            {formatPrice(prixVente)}
           </p>
-          <p className="text-xs text-gray-500">par {product.unite}</p>
+          <p className="text-xs text-gray-500">par {unite}</p>
         </div>
         
         <div>

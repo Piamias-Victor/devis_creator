@@ -2,11 +2,12 @@
 
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils/cn";
-import { Product, ProductCreateInput } from "@/types/product";
 import { useProducts } from "@/lib/hooks/useProducts";
 import { Search, ChevronDown, X, Plus, Zap } from "lucide-react";
 import { formatPriceUnit } from "@/lib/utils/calculUtils";
 import { QuickProductModal } from "./QuickProductModal";
+import { Product } from "@/types/product";
+// Ligne 4, remplace par :
 
 interface ProductComboboxProps {
   onSelect: (product: Product) => void;
