@@ -1,6 +1,6 @@
 /**
- * Types principaux de l'application ÉTENDUS
- * Support complet des devis sauvegardés
+ * Types principaux de l'application MIS À JOUR
+ * Intégration de la nouvelle structure Product simplifiée
  */
 
 export interface Client {
@@ -13,16 +13,9 @@ export interface Client {
   createdAt: Date;
 }
 
-export interface Product {
-  code: string;
-  designation: string;
-  prixAchat: number;
-  prixVente: number;
-  unite: string;
-  categorie: string;
-  colissage: number;
-  tva: number;
-}
+// NOUVEAU : Import des types Product simplifiés
+export type { Product, ProductCreateInput, ProductUpdateInput, ProductSortBy, ProductFilters } from "./product";
+export { ProductUtils } from "./product";
 
 export interface DevisLine {
   id: string;
@@ -44,7 +37,7 @@ export interface DevisLine {
   margePourcent?: number;    // MargeEuros / (PrixAchat × Qté) × 100
 }
 
-// NOUVEAU : Interface Devis complète
+// Interface Devis complète
 export interface Devis {
   id: string;
   numero: string;
@@ -80,7 +73,7 @@ export interface DevisCalculations {
   quantiteTotale: number;
 }
 
-// NOUVEAU : États de formulaire devis
+// États de formulaire devis
 export interface DevisFormState {
   isEditing: boolean;
   isDirty: boolean; // Modifications non sauvegardées
@@ -88,7 +81,7 @@ export interface DevisFormState {
   autoSaveEnabled: boolean;
 }
 
-// NOUVEAU : Options d'export
+// Options d'export
 export interface DevisExportOptions {
   includeMarges: boolean;
   includeDetails: boolean;

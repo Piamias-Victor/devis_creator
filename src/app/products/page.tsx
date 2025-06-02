@@ -1,21 +1,14 @@
-"use client";
-
 import { MainLayout } from "@/components/layout/MainLayout";
-import { ProductSearch } from "@/components/products/ProductSearch";
+import { ProductsManagementPage } from "@/components/products/ProductsManagementPage";
 
 /**
- * Route page /products
- * Catalogue complet des produits
+ * Route page /products MODIFIÉE
+ * Interface complète CRUD produits en ligne
  */
-export default function ProductsPage() {
-  const handleSelectProduct = (product: any) => {
-    // Placeholder - en production rediriger vers création devis
-    alert(`Produit sélectionné: ${product.designation}`);
-  };
-
+export default function ProductsPageRoute() {
   return (
     <MainLayout>
-      <ProductSearch onSelect={handleSelectProduct} />
+      <ProductsManagementPage />
     </MainLayout>
   );
 }

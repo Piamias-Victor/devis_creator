@@ -1,45 +1,38 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Product } from "@/types";
-import { ProductStorage } from "@/lib/storage/productStorage";
+import { Product } from "@/types/product";
+import { ProductStorageCRUD } from "@/lib/storage/productStorageCRUD";
 
 interface UseProductsReturn {
   products: Product[];
   loading: boolean;
   error: string | null;
   searchQuery: string;
-  selectedCategory: string;
-  sortBy: 'name' | 'price' | 'margin';
   setSearchQuery: (query: string) => void;
-  setSelectedCategory: (category: string) => void;
-  setSortBy: (sort: 'name' | 'price' | 'margin') => void;
   getProductByCode: (code: string) => Product | null;
-  categories: string[];
+  refreshProducts: () => void; // NOUVEAU: fonction pour forcer le rechargement
   stats: {
     total: number;
-    categories: number;
     margeGlobaleMoyenne: number;
     prixMoyen: number;
   };
 }
 
 /**
- * Hook personnalisé pour la gestion des produits
- * Recherche, filtrage, tri et statistiques
+ * Hook produits AMÉLIORÉ pour recherche et sélection
+ * Compatible avec le nouveau système CRUD + refresh automatique
+ * Version allégée pour utilisation dans les devis
  */
 export function useProducts(): UseProductsReturn {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [sortBy, setSortBy] = useState<'name' | 'price' | 'margin'>('name');
   const [isClient, setIsClient] = useState(false);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [refreshTrigger, setRefreshTrigger] = useState(0); // NOUVEAU: pour forcer refresh
   const [stats, setStats] = useState({
     total: 0,
-    categories: 0,
     margeGlobaleMoyenne: 0,
     prixMoyen: 0
   });
@@ -57,29 +50,30 @@ export function useProducts(): UseProductsReturn {
       setLoading(true);
       setError(null);
       
-      let filteredProducts = ProductStorage.getProducts();
+      let filteredProducts = ProductStorageCRUD.getProducts();
       
       // Appliquer recherche
       if (searchQuery) {
-        filteredProducts = ProductStorage.searchProducts(searchQuery);
+        filteredProducts = ProductStorageCRUD.searchProducts({ searchQuery });
       }
-      
-      // Appliquer filtre catégorie
-      if (selectedCategory) {
-        filteredProducts = filteredProducts.filter(
-          product => product.categorie === selectedCategory
-        );
-      }
-      
-      // Appliquer tri
-      filteredProducts = ProductStorage.sortProducts(filteredProducts, sortBy);
       
       setProducts(filteredProducts);
       
-      // Charger les catégories et stats une seule fois
-      if (categories.length === 0) {
-        setCategories(ProductStorage.getCategories());
-        setStats(ProductStorage.getProductStats());
+      // Calculer stats simplifiées
+      if (filteredProducts.length > 0) {
+        const total = filteredProducts.length;
+        const margeGlobaleMoyenne = filteredProducts.reduce((sum, p) => {
+          const marge = p.prixVente && p.prixAchat 
+            ? ((p.prixVente - p.prixAchat) / p.prixAchat) * 100 
+            : 0;
+          return sum + marge;
+        }, 0) / total;
+        
+        const prixMoyen = filteredProducts.reduce((sum, p) => sum + (p.prixVente || 0), 0) / total;
+        
+        setStats({ total, margeGlobaleMoyenne, prixMoyen });
+      } else {
+        setStats({ total: 0, margeGlobaleMoyenne: 0, prixMoyen: 0 });
       }
       
     } catch (err) {
@@ -88,31 +82,58 @@ export function useProducts(): UseProductsReturn {
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, selectedCategory, sortBy, isClient, categories.length]);
+  }, [searchQuery, isClient, refreshTrigger]); // AJOUT: refreshTrigger comme dépendance
 
   // Effet pour charger les produits
   useEffect(() => {
     loadProducts();
   }, [loadProducts]);
 
-  // Récupérer un produit par code
+  // Récupérer un produit par code (avec cache refresh)
   const getProductByCode = useCallback((code: string): Product | null => {
     if (!isClient) return null;
-    return ProductStorage.getProductByCode(code);
-  }, [isClient]);
+    return ProductStorageCRUD.getProductByCode(code);
+  }, [isClient, refreshTrigger]); // AJOUT: refreshTrigger pour recalculer
+
+  // NOUVEAU: Fonction pour forcer le rechargement
+  const refreshProducts = useCallback(() => {
+    setRefreshTrigger(prev => prev + 1);
+  }, []);
+
+  // NOUVEAU: Écouter les changements dans localStorage pour refresh automatique
+  useEffect(() => {
+    if (!isClient) return;
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "devis_creator_products_v2") {
+        console.log("📦 Produits mis à jour - refresh automatique");
+        refreshProducts();
+      }
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    
+    // BONUS: Écouter les changements custom de notre app
+    const handleCustomRefresh = () => {
+      refreshProducts();
+    };
+    
+    window.addEventListener("products-updated", handleCustomRefresh);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("products-updated", handleCustomRefresh);
+    };
+  }, [isClient, refreshProducts]);
 
   return {
     products,
     loading,
     error,
     searchQuery,
-    selectedCategory,
-    sortBy,
     setSearchQuery,
-    setSelectedCategory,
-    setSortBy,
     getProductByCode,
-    categories,
+    refreshProducts, // NOUVEAU: exposer la fonction de refresh
     stats,
   };
 }
