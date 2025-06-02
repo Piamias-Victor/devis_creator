@@ -11,10 +11,10 @@ import { useDevis } from "@/lib/hooks/useDevis";
 import { ClientModal } from "../clients/ClientModal";
 
 /**
- * Composant principal de création de devis AVEC DEBUG
- * Vérification des props transmises
+ * Composant principal de création de devis
+ * RENOMMÉ pour éviter conflit avec wrapper Suspense
  */
-export function DevisCreation() {
+function DevisCreationCore() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const devisId = searchParams?.get('id');
@@ -72,7 +72,7 @@ export function DevisCreation() {
     );
   }
 
-  // Sélectionner un client - FONCTION CORRIGÉE
+  // Sélectionner un client
   const handleSelectClient = (client: Client) => {
     console.log("👤 Fonction handleSelectClient appelée avec:", client);
     setSelectedClient(client);
@@ -182,13 +182,6 @@ export function DevisCreation() {
     }
   };
 
-  // DEBUG - Vérifier les props avant transmission
-  console.log("🔍 Props à transmettre:", {
-    onSelectClient: typeof handleSelectClient,
-    onCreateClient: typeof handleCreateClient,
-    selectedClient: selectedClient?.nom || "aucun"
-  });
-
   return (
     <>
       <DevisLayout
@@ -201,8 +194,8 @@ export function DevisCreation() {
         onSave={handleSave}
         onCancel={handleCancel}
         onExportPDF={handleExportPDF}
-        onSelectClient={handleSelectClient}    // FONCTION VÉRIFIÉE
-        onCreateClient={handleCreateClient}    // FONCTION VÉRIFIÉE
+        onSelectClient={handleSelectClient}
+        onCreateClient={handleCreateClient}
         onAddProduct={handleAddProduct}
         onUpdateLine={updateLine}
         onDeleteLine={deleteLine}
@@ -223,3 +216,5 @@ export function DevisCreation() {
     </>
   );
 }
+
+export { DevisCreationCore as DevisCreation };

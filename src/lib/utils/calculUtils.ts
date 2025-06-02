@@ -2,12 +2,12 @@ import { DevisLine, DevisCalculations } from "@/types";
 
 /**
  * Moteur de calculs temps réel pour devis
- * MODIFIÉ - Gestion 4 décimales pour prix unitaires
+ * CORRIGÉ - Gestion précise des arrondis pour éviter les variations de marge
  */
 
 /**
  * Calcule tous les montants d'une ligne
- * Prix unitaires: 4 décimales / Totaux finaux: 2 décimales
+ * CORRIGÉ - Calcul marge sur totaux bruts pour éviter erreurs d'arrondi
  */
 export function calculateLineAmounts(ligne: DevisLine): DevisLine {
   // Prix après remise (garder haute précision)
@@ -22,17 +22,21 @@ export function calculateLineAmounts(ligne: DevisLine): DevisLine {
   
   const totalTTC = Math.round((totalHT + totalTVA) * 100) / 100; // Arrondi final
   
-  // Calculs marge
+  // Calculs marge CORRIGÉS - utiliser les valeurs brutes
   let margeEuros = 0;
   let margePourcent = 0;
   
   if (ligne.prixAchat && ligne.prixAchat > 0) {
+    // CORRECTION: Utiliser les valeurs BRUTES pour le calcul de marge
     const margeUnitaireBrute = prixApresRemise - ligne.prixAchat;
     const margeEurosBrute = margeUnitaireBrute * ligne.quantite;
-    margeEuros = Math.round(margeEurosBrute * 100) / 100; // Arrondi final
+    margeEuros = Math.round(margeEurosBrute * 100) / 100; // Arrondi final seulement
     
-    const coutTotalAchat = ligne.prixAchat * ligne.quantite;
-    margePourcent = coutTotalAchat > 0 ? (margeEuros / coutTotalAchat) * 100 : 0;
+    // CORRECTION: Calcul pourcentage sur coût total BRUT
+    const coutTotalAchatBrut = ligne.prixAchat * ligne.quantite;
+    margePourcent = coutTotalAchatBrut > 0 ? (margeEurosBrute / coutTotalAchatBrut) * 100 : 0;
+    // Arrondi final du pourcentage à 1 décimale
+    margePourcent = Math.round(margePourcent * 10) / 10;
   }
   
   return {
@@ -48,18 +52,34 @@ export function calculateLineAmounts(ligne: DevisLine): DevisLine {
 
 /**
  * Calcule les totaux du devis
+ * CORRIGÉ - Recalcul marge globale pour cohérence
  */
 export function calculateDevisTotal(lignes: DevisLine[]): DevisCalculations {
+  // Totaux des montants (utilisent les valeurs déjà arrondies)
   const totalHT = lignes.reduce((sum, ligne) => sum + (ligne.totalHT || 0), 0);
   const totalTVA = lignes.reduce((sum, ligne) => sum + (ligne.totalTVA || 0), 0);
   const totalTTC = totalHT + totalTVA;
   
-  const margeGlobaleEuros = lignes.reduce((sum, ligne) => sum + (ligne.margeEuros || 0), 0);
-  const totalPrixAchat = lignes.reduce((sum, ligne) => {
-    return sum + (ligne.prixAchat ? ligne.prixAchat * ligne.quantite : 0);
-  }, 0);
+  // CORRECTION: Recalcul marge globale avec précision maximale
+  let margeGlobaleBrute = 0;
+  let totalPrixAchatBrut = 0;
   
-  const margeGlobalePourcent = totalPrixAchat > 0 ? (margeGlobaleEuros / totalPrixAchat) * 100 : 0;
+  for (const ligne of lignes) {
+    if (ligne.prixAchat && ligne.prixAchat > 0) {
+      const prixApresRemise = ligne.prixUnitaire * (1 - ligne.remise / 100);
+      const margeUnitaire = prixApresRemise - ligne.prixAchat;
+      
+      // Accumulation SANS arrondi intermédiaire
+      margeGlobaleBrute += margeUnitaire * ligne.quantite;
+      totalPrixAchatBrut += ligne.prixAchat * ligne.quantite;
+    }
+  }
+  
+  // Marge globale avec arrondi final
+  const margeGlobaleEuros = Math.round(margeGlobaleBrute * 100) / 100;
+  const margeGlobalePourcent = totalPrixAchatBrut > 0 
+    ? Math.round((margeGlobaleBrute / totalPrixAchatBrut) * 1000) / 10   // ✅ CORRECT
+    : 0;
   
   return {
     totalHT,

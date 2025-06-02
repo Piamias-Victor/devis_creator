@@ -20,7 +20,7 @@ interface DevisLayoutProps {
   onExportPDF: () => void;
   onSelectClient: (client: Client) => void;     // AJOUTÉ
   onCreateClient?: () => void;                  // AJOUTÉ
-  onAddProduct: (product?: Product) => void;
+  onAddProduct: any;
   onUpdateLine: (id: string, updates: Partial<DevisLine>) => void;
   onDeleteLine: (id: string) => void;
   onDuplicateLine: (id: string) => void;

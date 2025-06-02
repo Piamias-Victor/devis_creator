@@ -1,9 +1,17 @@
-import { DevisCreation } from "@/components/devis/DevisCreation";
+import { AuthGuard } from "@/components/auth/AuthGuard";
+import { MainLayout } from "@/components/layout/MainLayout";
+import { DevisCreation } from "@/components/devis/DevisCreationWrapper";
 
 /**
- * Route page /devis/new
- * Page de création d'un nouveau devis
+ * Page nouveau devis AVEC Suspense
+ * Fix erreur Next.js 15 useSearchParams
  */
 export default function NewDevisPage() {
-  return <DevisCreation />;
+  return (
+    <AuthGuard>
+      <MainLayout>
+        <DevisCreation />
+      </MainLayout>
+    </AuthGuard>
+  );
 }
