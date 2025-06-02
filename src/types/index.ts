@@ -1,5 +1,6 @@
 /**
- * Types principaux de l'application
+ * Types principaux de l'application ÉTENDUS
+ * Support complet des devis sauvegardés
  */
 
 export interface Client {
@@ -34,7 +35,7 @@ export interface DevisLine {
   tva: number;
   colissage?: number; // Pour calcul nb colis
   
-  // Calculs automatiques (ajoutés)
+  // Calculs automatiques
   prixApresRemise?: number;  // Prix après remise
   totalHT?: number;          // Qté × PrixApresRemise
   totalTVA?: number;         // TotalHT × TVA/100
@@ -43,17 +44,20 @@ export interface DevisLine {
   margePourcent?: number;    // MargeEuros / (PrixAchat × Qté) × 100
 }
 
+// NOUVEAU : Interface Devis complète
 export interface Devis {
   id: string;
   numero: string;
   date: Date;
   dateValidite: Date;
   clientId: string;
+  clientNom?: string; // Pour affichage rapide sans lookup
   lignes: DevisLine[];
-  status: 'brouillon' | 'envoye' | 'accepte' | 'refuse';
+  status: 'brouillon' | 'envoye' | 'accepte' | 'refuse' | 'expire';
   totalHT: number;
   totalTTC: number;
-  margeGlobale: number;
+  margeGlobale: number; // Pourcentage
+  notes?: string; // Notes internes
   createdAt: Date;
   updatedAt: Date;
 }
@@ -65,7 +69,7 @@ export interface DashboardStats {
   clientsActifs: number;
 }
 
-// Nouveau type pour calculs globaux
+// Calculs globaux temps réel
 export interface DevisCalculations {
   totalHT: number;
   totalTVA: number;
@@ -74,4 +78,20 @@ export interface DevisCalculations {
   margeGlobalePourcent: number;
   nombreLignes: number;
   quantiteTotale: number;
+}
+
+// NOUVEAU : États de formulaire devis
+export interface DevisFormState {
+  isEditing: boolean;
+  isDirty: boolean; // Modifications non sauvegardées
+  lastSaved?: Date;
+  autoSaveEnabled: boolean;
+}
+
+// NOUVEAU : Options d'export
+export interface DevisExportOptions {
+  includeMarges: boolean;
+  includeDetails: boolean;
+  format: 'pdf' | 'excel' | 'csv';
+  template: 'standard' | 'minimal' | 'detaille';
 }

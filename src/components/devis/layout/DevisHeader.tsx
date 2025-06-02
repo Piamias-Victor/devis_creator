@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils/cn";
 import { Client } from "@/types";
 import { Save, FileX, FileText, ArrowLeft } from "lucide-react";
 import { formatPrice } from "@/lib/utils/devisUtils";
+import { ClientSelector } from "../ClientSelector";
 
 interface DevisHeaderProps {
   client: Client | null;
@@ -14,12 +15,16 @@ interface DevisHeaderProps {
   onSave: () => void;
   onCancel: () => void;
   onExportPDF: () => void;
+  onSelectClient: (client: Client) => void;
+  onCreateClient?: () => void;
   saving?: boolean;
+  isDirty?: boolean;
+  lastSaved?: Date | null;
 }
 
 /**
- * Header du devis avec infos client et actions
- * Navigation + métadonnées + toolbar actions
+ * Header du devis AVEC sélecteur de client
+ * Navigation + métadonnées + sélection client + toolbar actions
  */
 export function DevisHeader({
   client,
@@ -30,22 +35,48 @@ export function DevisHeader({
   onSave,
   onCancel,
   onExportPDF,
-  saving
+  onSelectClient,
+  onCreateClient,
+  saving,
+  isDirty,
+  lastSaved
 }: DevisHeaderProps) {
   
   return (
     <div className="space-y-4">
       {/* Breadcrumb navigation */}
-      <div className="flex items-center space-x-2 text-sm">
-        <button 
-          onClick={onCancel}
-          className="flex items-center space-x-1 text-blue-600 dark:text-blue-400 hover:underline"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Retour au tableau de bord</span>
-        </button>
-        <span className="text-gray-500">/</span>
-        <span className="text-gray-700 dark:text-gray-300">Nouveau devis</span>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2 text-sm">
+          <button 
+            onClick={onCancel}
+            className="flex items-center space-x-1 text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Retour</span>
+          </button>
+          <span className="text-gray-500">/</span>
+          <span className="text-gray-700 dark:text-gray-300">
+            {client ? "Modifier devis" : "Nouveau devis"}
+          </span>
+        </div>
+
+        {/* Indicateur de sauvegarde */}
+        {isDirty !== undefined && (
+          <div className="flex items-center space-x-2 text-sm">
+            {isDirty ? (
+              <span className="text-orange-600 dark:text-orange-400">
+                ● Modifications non sauvegardées
+              </span>
+            ) : lastSaved ? (
+              <span className="text-green-600 dark:text-green-400">
+                ✓ Sauvegardé à {lastSaved.toLocaleTimeString('fr-FR', { 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                })}
+              </span>
+            ) : null}
+          </div>
+        )}
       </div>
 
       {/* Header principal */}
@@ -63,7 +94,7 @@ export function DevisHeader({
                   Devis #{numeroDevis}
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400">
-                  Création d'un nouveau devis
+                  {client ? "Modification d'un devis existant" : "Création d'un nouveau devis"}
                 </p>
               </div>
               
@@ -83,47 +114,29 @@ export function DevisHeader({
               </div>
             </div>
 
-            {/* Informations client */}
-            {client ? (
-              <div className={cn(
-                "p-4 rounded-lg border border-gray100",
-                "bg-white/5 backdrop-blur-sm"
-              )}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                      {client.nom}
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      {client.adresse}
-                    </p>
-                    <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600 dark:text-gray-400">
-                      <span>📞 {client.telephone}</span>
-                      <span>✉️ {client.email}</span>
-                      <span>🏢 {client.siret}</span>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                      {formatPrice(totalTTC)}
-                    </div>
-                    <div className="text-sm text-gray-500">Total TTC</div>
+            {/* Sélection du client */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Client *
+                </label>
+                <ClientSelector
+                  selectedClient={client}
+                  onSelectClient={onSelectClient}
+                  onCreateClient={onCreateClient}
+                />
+              </div>
+              
+              {/* Total TTC */}
+              <div className="flex items-end">
+                <div className="w-full text-center lg:text-right">
+                  <div className="text-sm text-gray-500 mb-1">Total TTC</div>
+                  <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                    {formatPrice(totalTTC)}
                   </div>
                 </div>
               </div>
-            ) : (
-              <div className={cn(
-                "p-4 rounded-lg border-2 border-dashed border-orange-300",
-                "bg-orange-50/50 dark:bg-orange-900/20"
-              )}>
-                <p className="text-orange-700 dark:text-orange-300 font-medium">
-                  ⚠️ Aucun client sélectionné
-                </p>
-                <p className="text-sm text-orange-600 dark:text-orange-400 mt-1">
-                  Veuillez sélectionner un client pour continuer
-                </p>
-              </div>
-            )}
+            </div>
           </div>
 
           {/* Actions toolbar */}

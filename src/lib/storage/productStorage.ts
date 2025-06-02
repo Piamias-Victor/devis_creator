@@ -5,24 +5,21 @@ const STORAGE_KEY = "devis_creator_products";
 
 /**
  * Gestionnaire de stockage localStorage pour les produits
- * NETTOYÉ - Utilise UNIQUEMENT la base réelle de 86 produits Molicare
+ * CORRIGÉ - Force l'utilisation des vrais produits Molicare
  */
 export class ProductStorage {
   /**
-   * Récupère tous les produits du localStorage
+   * Récupère tous les produits - FORCE les produits réels
    */
   static getProducts(): Product[] {
     // Vérification côté client uniquement
     if (typeof window === "undefined") return REAL_PRODUCTS;
     
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (!stored) {
-        // Initialiser avec la base RÉELLE uniquement
-        this.saveProducts(REAL_PRODUCTS);
-        return REAL_PRODUCTS;
-      }
-      return JSON.parse(stored);
+      // FORCER LA RÉINITIALISATION avec les vrais produits
+      console.log("🔄 Initialisation forcée des vrais produits Molicare");
+      this.saveProducts(REAL_PRODUCTS);
+      return REAL_PRODUCTS;
     } catch (error) {
       console.error("Erreur lecture produits:", error);
       return REAL_PRODUCTS;
@@ -37,9 +34,21 @@ export class ProductStorage {
     
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
+      console.log(`✅ ${products.length} produits sauvegardés`);
     } catch (error) {
       console.error("Erreur sauvegarde produits:", error);
     }
+  }
+
+  /**
+   * FORCE la réinitialisation avec les vrais produits
+   */
+  static forceRealProducts(): void {
+    if (typeof window === "undefined") return;
+    
+    console.log("🚀 RÉINITIALISATION FORCÉE des produits Molicare");
+    localStorage.removeItem(STORAGE_KEY); // Supprimer l'ancien cache
+    this.saveProducts(REAL_PRODUCTS); // Sauver les vrais produits
   }
 
   /**
@@ -112,7 +121,7 @@ export class ProductStorage {
     margeGlobaleMoyenne: number;
     prixMoyen: number;
   } {
-    const products = REAL_PRODUCTS;
+    const products = REAL_PRODUCTS; // Utiliser directement les vrais produits
     
     const total = products.length;
     const categories = REAL_PRODUCT_CATEGORIES.length;
@@ -130,5 +139,13 @@ export class ProductStorage {
       margeGlobaleMoyenne,
       prixMoyen
     };
+  }
+}
+
+// INITIALISATION AUTOMATIQUE AU CHARGEMENT
+if (typeof window !== "undefined") {
+  // Force la réinitialisation à chaque chargement en développement
+  if (process.env.NODE_ENV === "development") {
+    ProductStorage.forceRealProducts();
   }
 }

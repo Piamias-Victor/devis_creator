@@ -7,9 +7,11 @@ import {
   Users, 
   Package,
   BarChart3,
-  Archive
+  Archive,
+  List
 } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface NavItem {
   id: string;
@@ -21,7 +23,8 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { id: "dashboard", label: "Tableau de bord", icon: Home, href: "/" },
-  { id: "devis", label: "Créer un devis", icon: FileText, href: "/devis/new" },
+  { id: "devis-new", label: "Créer un devis", icon: FileText, href: "/devis/new" },
+  { id: "devis-list", label: "Mes devis", icon: List, href: "/devis" }, // NOUVEAU
   { id: "clients", label: "Clients", icon: Users, href: "/clients", badge: 12 },
   { id: "products", label: "Produits", icon: Package, href: "/products" },
   { id: "stats", label: "Statistiques", icon: BarChart3, href: "/stats" },
@@ -30,10 +33,16 @@ const NAV_ITEMS: NavItem[] = [
 
 /**
  * Navigation latérale avec glassmorphism
- * Design premium desktop-first
+ * MODIFIÉE - Ajout onglet "Mes devis"
  */
 export function Navigation() {
   const [activeItem, setActiveItem] = useState("dashboard");
+  const router = useRouter();
+
+  const handleNavigation = (item: NavItem) => {
+    setActiveItem(item.id);
+    router.push(item.href);
+  };
 
   return (
     <nav className={cn(
@@ -50,19 +59,7 @@ export function Navigation() {
             return (
               <button
                 key={item.id}
-                onClick={() => {
-                  setActiveItem(item.id);
-                  // Navigation simple - en production utiliser Next.js router
-                  if (item.href === "/clients") {
-                    window.location.href = "/clients";
-                  } else if (item.href === "/devis/new") {
-                    window.location.href = "/devis/new";
-                  } else if (item.href === "/products") {
-                    window.location.href = "/products";
-                  } else if (item.href === "/") {
-                    window.location.href = "/";
-                  }
-                }}
+                onClick={() => handleNavigation(item)}
                 className={cn(
                   "w-full flex items-center space-x-3 px-4 py-3 rounded-lg",
                   "transition-all duration-200 text-left",

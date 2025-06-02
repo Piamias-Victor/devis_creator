@@ -1,87 +1,109 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { DevisLayout } from "./layout/DevisLayout";
 import { Client, Product } from "@/types";
 import { generateDevisNumber, calculateValidityDate } from "@/lib/utils/devisUtils";
 import { ClientStorage } from "@/lib/storage/clientStorage";
 import { PdfGenerator } from "@/lib/pdf/pdfGenerator";
 import { useDevis } from "@/lib/hooks/useDevis";
+import { ClientModal } from "../clients/ClientModal";
 
 /**
- * Composant principal de création de devis - MODIFIÉ
- * Utilise le nouveau système de calculs automatiques + export PDF
+ * Composant principal de création de devis AVEC DEBUG
+ * Vérification des props transmises
  */
 export function DevisCreation() {
-  // État du devis avec valeurs par défaut pour SSR
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const devisId = searchParams?.get('id');
+  
+  // État du devis
   const [numeroDevis, setNumeroDevis] = useState("2025-0000-0000");
-  const [dateCreation, setDateCreation] = useState(new Date("2025-01-01"));
-  const [dateValidite, setDateValidite] = useState(new Date("2025-01-31"));
+  const [dateCreation, setDateCreation] = useState(new Date());
+  const [dateValidite, setDateValidite] = useState(new Date());
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [saving, setSaving] = useState(false);
   const [isClient, setIsClient] = useState(false);
 
-  // Hook de gestion du devis MODIFIÉ avec calculs automatiques
+  // Modal création client
+  const [showClientModal, setShowClientModal] = useState(false);
+  const [clientModalLoading, setClientModalLoading] = useState(false);
+
+  // Hook de gestion du devis
   const {
     lignes,
     calculations,
+    isDirty,
+    lastSaved,
     addLine,
     updateLine,
     deleteLine,
     duplicateLine,
-    clearAll
-  } = useDevis();
+    saveDevis
+  } = useDevis(devisId || undefined);
 
-  // Initialisation côté client uniquement
+  // Initialisation côté client
   useEffect(() => {
     setIsClient(true);
-    setNumeroDevis(generateDevisNumber());
-    const now = new Date();
-    setDateCreation(now);
-    setDateValidite(calculateValidityDate(now));
-  }, []);
-
-  // Chargement du client par défaut (côté client uniquement)
-  useEffect(() => {
-    if (!isClient) return;
     
-    const clients = ClientStorage.getClients();
-    if (clients.length > 0) {
-      setSelectedClient(clients[0]); // Premier client par défaut
+    if (devisId) {
+      console.log("📝 Chargement devis:", devisId);
+    } else {
+      setNumeroDevis(generateDevisNumber());
+      const now = new Date();
+      setDateCreation(now);
+      setDateValidite(calculateValidityDate(now));
     }
-  }, [isClient]);
+  }, [devisId]);
 
-  // Affichage loading pendant hydratation
+  // Affichage loading
   if (!isClient) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400">Chargement du devis...</p>
+          <p className="text-gray-600 dark:text-gray-400">
+            {devisId ? "Chargement du devis..." : "Nouveau devis..."}
+          </p>
         </div>
       </div>
     );
   }
 
-  // Ajouter un produit (depuis recherche ou test)
-  const handleAddProduct = (product?: Product) => {
-    if (product) {
-      // Produit sélectionné depuis la recherche
-      addLine(product);
-    } else {
-      // Produit de test pour démonstration
-      const testProduct: Product = {
-        code: `TEST${lignes.length + 1}`,
-        designation: `Produit de test ${lignes.length + 1}`,
-        prixAchat: 8.50, // Prix d'achat pour calculer marge
-        prixVente: 12.75, // Prix de vente = prix HT affiché
-        unite: "pièce",
-        categorie: "Test",
-        colissage: 12, // Pour calcul colis
-        tva: 20
-      };
-      addLine(testProduct);
+  // Sélectionner un client - FONCTION CORRIGÉE
+  const handleSelectClient = (client: Client) => {
+    console.log("👤 Fonction handleSelectClient appelée avec:", client);
+    setSelectedClient(client);
+    console.log("✅ Client sélectionné:", client.nom);
+  };
+
+  // Créer un nouveau client
+  const handleCreateClient = () => {
+    console.log("➕ Ouverture modal création client");
+    setShowClientModal(true);
+  };
+
+  // Sauvegarder nouveau client depuis modal
+  const handleSaveNewClient = async (clientData: Omit<Client, "id" | "createdAt">) => {
+    setClientModalLoading(true);
+    
+    try {
+      const newClient = ClientStorage.addClient(clientData);
+      setSelectedClient(newClient);
+      setShowClientModal(false);
+      console.log("✅ Nouveau client créé et sélectionné:", newClient.nom);
+    } catch (error) {
+      alert("Erreur lors de la création du client");
+    } finally {
+      setClientModalLoading(false);
     }
+  };
+
+  // Ajouter un produit
+  const handleAddProduct = (product: Product) => {
+    addLine(product);
   };
 
   // Sauvegarder le devis
@@ -91,42 +113,48 @@ export function DevisCreation() {
       return;
     }
 
+    if (lignes.length === 0) {
+      alert("Ajoutez au moins un produit au devis");
+      return;
+    }
+
     setSaving(true);
     
     try {
-      // Simulation sauvegarde (localStorage à implémenter)
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const savedDevis = await saveDevis(
+        selectedClient,
+        numeroDevis,
+        dateCreation,
+        dateValidite
+      );
       
-      console.log("Devis sauvegardé:", {
-        numero: numeroDevis,
-        client: selectedClient,
-        lignes,
-        calculations
-      });
+      console.log("✅ Devis sauvegardé:", savedDevis);
+      alert(`Devis ${savedDevis.numero} sauvegardé avec succès !`);
       
-      alert("Devis sauvegardé avec succès !");
+      if (!devisId) {
+        router.push(`/devis?saved=${savedDevis.id}`);
+      }
       
     } catch (error) {
+      console.error("❌ Erreur sauvegarde:", error);
       alert("Erreur lors de la sauvegarde");
-      console.error(error);
     } finally {
       setSaving(false);
     }
   };
 
-  // Annuler et retourner au dashboard
+  // Annuler et retourner
   const handleCancel = () => {
-    if (lignes.length > 0) {
-      if (!confirm("Êtes-vous sûr de vouloir quitter ? Les modifications seront perdues.")) {
+    if (isDirty) {
+      if (!confirm("Êtes-vous sûr de vouloir quitter ? Les modifications non sauvegardées seront perdues.")) {
         return;
       }
     }
     
-    // Navigation vers dashboard
-    window.location.href = "/";
+    router.push("/devis");
   };
 
-  // Export PDF - NOUVEAU
+  // Export PDF
   const handleExportPDF = async () => {
     if (!selectedClient) {
       alert("Veuillez sélectionner un client avant d'exporter");
@@ -154,22 +182,44 @@ export function DevisCreation() {
     }
   };
 
+  // DEBUG - Vérifier les props avant transmission
+  console.log("🔍 Props à transmettre:", {
+    onSelectClient: typeof handleSelectClient,
+    onCreateClient: typeof handleCreateClient,
+    selectedClient: selectedClient?.nom || "aucun"
+  });
+
   return (
-    <DevisLayout
-      client={selectedClient}
-      numeroDevis={numeroDevis}
-      dateCreation={dateCreation}
-      dateValidite={dateValidite}
-      lignes={lignes}
-      calculations={calculations}
-      onSave={handleSave}
-      onCancel={handleCancel}
-      onExportPDF={handleExportPDF}
-      onAddProduct={handleAddProduct}
-      onUpdateLine={updateLine}
-      onDeleteLine={deleteLine}
-      onDuplicateLine={duplicateLine}
-      saving={saving}
-    />
+    <>
+      <DevisLayout
+        client={selectedClient}
+        numeroDevis={numeroDevis}
+        dateCreation={dateCreation}
+        dateValidite={dateValidite}
+        lignes={lignes}
+        calculations={calculations}
+        onSave={handleSave}
+        onCancel={handleCancel}
+        onExportPDF={handleExportPDF}
+        onSelectClient={handleSelectClient}    // FONCTION VÉRIFIÉE
+        onCreateClient={handleCreateClient}    // FONCTION VÉRIFIÉE
+        onAddProduct={handleAddProduct}
+        onUpdateLine={updateLine}
+        onDeleteLine={deleteLine}
+        onDuplicateLine={duplicateLine}
+        saving={saving}
+        isDirty={isDirty}
+        lastSaved={lastSaved}
+        isEditing={!!devisId}
+      />
+
+      {/* Modal création client */}
+      <ClientModal
+        isOpen={showClientModal}
+        onClose={() => setShowClientModal(false)}
+        onSubmit={handleSaveNewClient}
+        loading={clientModalLoading}
+      />
+    </>
   );
 }

@@ -7,7 +7,6 @@ import { DevisTable } from "../table/DevisTable";
 import { MargeIndicators } from "../indicators/MargeIndicators";
 import { FinancialSummary } from "../summary/FinancialSummary";
 import { Client, DevisLine, Product, DevisCalculations } from "@/types";
-import { Plus } from "lucide-react";
 
 interface DevisLayoutProps {
   client: Client | null;
@@ -19,16 +18,21 @@ interface DevisLayoutProps {
   onSave: () => void;
   onCancel: () => void;
   onExportPDF: () => void;
+  onSelectClient: (client: Client) => void;     // AJOUTÉ
+  onCreateClient?: () => void;                  // AJOUTÉ
   onAddProduct: (product?: Product) => void;
   onUpdateLine: (id: string, updates: Partial<DevisLine>) => void;
   onDeleteLine: (id: string) => void;
   onDuplicateLine: (id: string) => void;
   saving?: boolean;
+  isDirty?: boolean;                            // AJOUTÉ
+  lastSaved?: Date | null;                      // AJOUTÉ
+  isEditing?: boolean;                          // AJOUTÉ
 }
 
 /**
- * Layout principal MODIFIÉ - Sans sidebar, pleine largeur
- * Header > Indicateurs > Recherche > Tableau > Résumé
+ * Layout principal du devis CORRIGÉ
+ * Transmission correcte de toutes les props
  */
 export function DevisLayout({
   client,
@@ -40,18 +44,23 @@ export function DevisLayout({
   onSave,
   onCancel,
   onExportPDF,
+  onSelectClient,        // NOUVELLE PROP
+  onCreateClient,        // NOUVELLE PROP
   onAddProduct,
   onUpdateLine,
   onDeleteLine,
   onDuplicateLine,
-  saving
+  saving,
+  isDirty,              // NOUVELLE PROP
+  lastSaved,            // NOUVELLE PROP
+  isEditing
 }: DevisLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
       <div className="container mx-auto px-6 py-6 max-w-full">
         <div className="space-y-6">
-          {/* Header avec infos devis et actions */}
+          {/* Header avec infos devis et sélecteur client */}
           <DevisHeader
             client={client}
             numeroDevis={numeroDevis}
@@ -61,7 +70,11 @@ export function DevisLayout({
             onSave={onSave}
             onCancel={onCancel}
             onExportPDF={onExportPDF}
+            onSelectClient={onSelectClient}    // TRANSMISSION PROP
+            onCreateClient={onCreateClient}    // TRANSMISSION PROP
             saving={saving}
+            isDirty={isDirty}                  // TRANSMISSION PROP
+            lastSaved={lastSaved}              // TRANSMISSION PROP
           />
 
           {/* Indicateurs de marge horizontaux */}
@@ -78,8 +91,6 @@ export function DevisLayout({
                 placeholder="🔍 Rechercher et ajouter un produit au devis..."
                 className="flex-1"
               />
-              
-              
             </div>
           </div>
 
