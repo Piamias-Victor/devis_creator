@@ -239,7 +239,7 @@ export const SIMPLIFIED_PRODUCTS: ProductCreateInput[] = [
   {
     code: "165272",
     designation: "Molicare Premium Elastic 6G M",
-    prixAchat: 0.31,
+    prixAchat: 0.64,
     tva: 20,
     colissage: 90
   },
