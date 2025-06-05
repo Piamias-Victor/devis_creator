@@ -184,7 +184,7 @@ export function ProductModal({
                   "bg-gray-50 text-gray-900 placeholder-gray-500",
                   "focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                 )}
-                placeholder="Ex: MoliCare® Premium Fixpants Long Leg B3 - S"
+                placeholder="Ex: MoliCare Premium Fixpants Long Leg B3 - S"
                 required
               />
             </div>

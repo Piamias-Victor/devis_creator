@@ -178,7 +178,7 @@ export function QuickProductModal({
                     "bg-gray-50 text-gray-900 placeholder-gray-500",
                     "focus:outline-none focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500"
                   )}
-                  placeholder="Ex: MoliCare® Premium Fixpants..."
+                  placeholder="Ex: MoliCare Premium Fixpants..."
                   required
                   autoFocus
                 />

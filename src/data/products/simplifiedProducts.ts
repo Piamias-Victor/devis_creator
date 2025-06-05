@@ -9,161 +9,161 @@ export const SIMPLIFIED_PRODUCTS: ProductCreateInput[] = [
   // Molicare Premium FIXPANTS (produits existants)
   {
     code: "4052199274621",
-    designation: "MoliCare® Premium Fixpants Long Leg B3 - S",
+    designation: "MoliCare Premium Fixpants Long Leg B3 - S",
     prixAchat: 0.86,
     tva: 20,
     colissage: 20
   },
   {
     code: "4052199274652", 
-    designation: "MoliCare® Premium Fixpants Long Leg B3 - M",
+    designation: "MoliCare Premium Fixpants Long Leg B3 - M",
     prixAchat: 0.86,
     tva: 20,
     colissage: 20
   },
   {
     code: "4052199274683",
-    designation: "MoliCare® Premium Fixpants Long Leg B3 - L", 
+    designation: "MoliCare Premium Fixpants Long Leg B3 - L", 
     prixAchat: 0.86,
     tva: 20,
     colissage: 20
   },
   {
     code: "4052199274713",
-    designation: "MoliCare® Premium Fixpants Long Leg B3 - XL",
+    designation: "MoliCare Premium Fixpants Long Leg B3 - XL",
     prixAchat: 0.86,
     tva: 20,
     colissage: 20
   },
   {
     code: "4052199267692",
-    designation: "MoliCare® Premium FIXPANTS S longleg - Bte de 25",
+    designation: "MoliCare Premium FIXPANTS S longleg - Bte de 25",
     prixAchat: 0.36,
     tva: 20,
     colissage: 8
   },
   {
     code: "4052199267722",
-    designation: "MoliCare® Premium FIXPANTS M longleg - Bte de 25", 
+    designation: "MoliCare Premium FIXPANTS M longleg - Bte de 25", 
     prixAchat: 0.37,
     tva: 20,
     colissage: 8
   },
   {
     code: "4052199267753",
-    designation: "MoliCare® Premium FIXPANTS L longleg - Bte de 25",
+    designation: "MoliCare Premium FIXPANTS L longleg - Bte de 25",
     prixAchat: 0.38,
     tva: 20,
     colissage: 8
   },
   {
     code: "4052199267784",
-    designation: "MoliCare® Premium FIXPANTS XL longleg - Bte de 25",
+    designation: "MoliCare Premium FIXPANTS XL longleg - Bte de 25",
     prixAchat: 0.42,
     tva: 20,
     colissage: 8
   },
   {
     code: "4052199289557",
-    designation: "Molicare® Premium LADY pad 0,5G",
+    designation: "Molicare Premium LADY pad 0,5G",
     prixAchat: 0.06,
     tva: 20,
     colissage: 8
   },
   {
     code: "4052199293325",
-    designation: "Molicare® Premium LADY pad 2G",
+    designation: "Molicare Premium LADY pad 2G",
     prixAchat: 0.16,
     tva: 20,
     colissage: 18
   },
   {
     code: "4052199290553",
-    designation: "Molicare® Premium LADY pad 3G",
+    designation: "Molicare Premium LADY pad 3G",
     prixAchat: 0.17,
     tva: 20,
     colissage: 12
   },
   {
     code: "4052199275246",
-    designation: "Molicare® Premium MOBILE 5G S",
+    designation: "Molicare Premium MOBILE 5G S",
     prixAchat: 0.47,
     tva: 20,
     colissage: 4
   },
   {
     code: "4052199275277",
-    designation: "Molicare® Premium MOBILE 5G M",
+    designation: "Molicare Premium MOBILE 5G M",
     prixAchat: 0.47,
     tva: 20,
     colissage: 3
   },
   {
     code: "4052199275307",
-    designation: "Molicare® Premium MOBILE 5G L",
+    designation: "Molicare Premium MOBILE 5G L",
     prixAchat: 0.53,
     tva: 20,
     colissage: 4
   },
   {
     code: "4052199275390",
-    designation: "Molicare® Premium MOBILE 6G S",
+    designation: "Molicare Premium MOBILE 6G S",
     prixAchat: 0.61,
     tva: 20,
     colissage: 4
   },
   {
     code: "4052199275420",
-    designation: "Molicare® Premium MOBILE 6G M",
+    designation: "Molicare Premium MOBILE 6G M",
     prixAchat: 0.64,
     tva: 20,
     colissage: 3
   },
   {
     code: "4052199275451",
-    designation: "Molicare® Premium MOBILE 6G L",
+    designation: "Molicare Premium MOBILE 6G L",
     prixAchat: 0.70,
     tva: 20,
     colissage: 4
   },
   {
     code: "4052199296975",
-    designation: "Molicare® Premium Elastic 6 Gouttes S",
+    designation: "Molicare Premium Elastic 6 Gouttes S",
     prixAchat: 0.30,
     tva: 20,
     colissage: 3
   },
   {
     code: "4052199297002",
-    designation: "Molicare® Premium Elastic 6 Gouttes M",
+    designation: "Molicare Premium Elastic 6 Gouttes M",
     prixAchat: 0.31,
     tva: 20,
     colissage: 3
   },
   {
     code: "4052199297033",
-    designation: "Molicare® Premium Elastic 6 Gouttes L",
+    designation: "Molicare Premium Elastic 6 Gouttes L",
     prixAchat: 0.41,
     tva: 20,
     colissage: 3
   },
   {
     code: "4052199297248",
-    designation: "Molicare® Premium Elastic 8G M",
+    designation: "Molicare Premium Elastic 8G M",
     prixAchat: 0.38,
     tva: 20,
     colissage: 3
   },
   {
     code: "4052199505374",
-    designation: "Molicare® Premium Bed Mat 7 gouttes 60X90 cm",
+    designation: "Molicare Premium Bed Mat 7 gouttes 60X90 cm",
     prixAchat: 0.20,
     tva: 20,
     colissage: 4
   },
   {
     code: "4052199508603",
-    designation: "Molicare® Premium Bed Mat 8 gouttes 60X90 cm",
+    designation: "Molicare Premium Bed Mat 8 gouttes 60X90 cm",
     prixAchat: 0.22,
     tva: 20,
     colissage: 4
@@ -345,7 +345,7 @@ export const SIMPLIFIED_PRODUCTS: ProductCreateInput[] = [
   // Molicare Bed Mat - Nouvelle référence
   {
     code: "161088",
-    designation: "Molicare® Premium Bed Mat 8 gouttes 60X90 cm",
+    designation: "Molicare Premium Bed Mat 8 gouttes 60X90 cm",
     prixAchat: 0.22,
     tva: 20,
     colissage: 120
