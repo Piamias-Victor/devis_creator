@@ -155,7 +155,7 @@ export function useProductsCRUD(): UseProductsCRUDReturn {
   const exportCSV = useCallback(() => {
     const headers = "Code,Designation,Prix Achat,Prix Vente,Categorie,Colissage,TVA";
     const rows = products.map(p => 
-      `"${p.code}","${p.designation}",${p.prixAchat},${p.prixVente},"${p.categorie}",${p.colissage},${p.tva}`
+      `"${p.code}","${p.designation}",${p.prixAchat},${p.prixVente},${p.colissage},${p.tva}`
     );
     
     const csv = [headers, ...rows].join("\n");
@@ -176,7 +176,7 @@ export function useProductsCRUD(): UseProductsCRUDReturn {
     total: products.length,
     margeMoyenne: products.length > 0 
       ? products.reduce((sum, p) => {
-          const marge = ((p.prixVente - p.prixAchat) / p.prixAchat) * 100;
+          const marge = ((p.prixVente || 0 - p.prixAchat) / p.prixAchat) * 100;
           return sum + marge;
         }, 0) / products.length
       : 0
