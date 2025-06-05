@@ -9,10 +9,11 @@ import { ClientStorage } from "@/lib/storage/clientStorage";
 import { PdfGenerator } from "@/lib/pdf/pdfGenerator";
 import { ClientModal } from "../clients/ClientModal";
 import { useDevis } from "@/lib/hooks/useDevis";
+import { DevisRepository } from "@/lib/repositories/devisRepository";
 
 /**
- * Composant principal de création de devis
- * RENOMMÉ pour éviter conflit avec wrapper Suspense
+ * Composant principal de création de devis CORRIGÉ
+ * Fix : Charger le vrai numéro depuis la DB pour devis existants
  */
 function DevisCreationCore() {
   const router = useRouter();
@@ -26,6 +27,7 @@ function DevisCreationCore() {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [saving, setSaving] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [loadingDevis, setLoadingDevis] = useState(false);
 
   // Modal création client
   const [showClientModal, setShowClientModal] = useState(false);
@@ -44,13 +46,51 @@ function DevisCreationCore() {
     saveDevis
   } = useDevis(devisId || undefined);
 
+  // NOUVEAU : Charger devis complet pour récupérer numéro + client
+  const loadDevisDetails = async (devisIdToLoad: string) => {
+    try {
+      setLoadingDevis(true);
+      console.log('🔄 Chargement détails devis:', devisIdToLoad);
+
+      const devis = await DevisRepository.getDevisById(devisIdToLoad);
+      
+      if (devis) {
+        // ✅ CORRECTION : Utiliser le vrai numéro de la DB
+        setNumeroDevis(devis.numero);
+        setDateCreation(devis.date);
+        setDateValidite(devis.dateValidite);
+        
+        // Charger le client associé
+        if (devis.clientId) {
+          try {
+            // const client = ClientStorage.getClientById(devis.clientId);
+            // if (client) {
+            //   setSelectedClient(client);
+            //   console.log('✅ Client chargé:', client.nom);
+            // }
+          } catch (error) {
+            console.warn('⚠️ Client non trouvé:', devis.clientId);
+          }
+        }
+        
+        console.log('✅ Détails devis chargés:', devis.numero);
+      }
+    } catch (error) {
+      console.error('❌ Erreur chargement détails:', error);
+    } finally {
+      setLoadingDevis(false);
+    }
+  };
+
   // Initialisation côté client
   useEffect(() => {
     setIsClient(true);
     
     if (devisId) {
-      console.log("📝 Chargement devis:", devisId);
+      console.log("📝 Mode édition - chargement devis:", devisId);
+      loadDevisDetails(devisId);
     } else {
+      console.log("📝 Mode création - nouveau devis");
       setNumeroDevis(generateDevisNumber());
       const now = new Date();
       setDateCreation(now);
@@ -59,7 +99,7 @@ function DevisCreationCore() {
   }, [devisId]);
 
   // Affichage loading
-  if (!isClient) {
+  if (!isClient || loadingDevis) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
         <div className="text-center">
@@ -74,9 +114,8 @@ function DevisCreationCore() {
 
   // Sélectionner un client
   const handleSelectClient = (client: Client) => {
-    console.log("👤 Fonction handleSelectClient appelée avec:", client);
+    console.log("👤 Client sélectionné:", client.nom);
     setSelectedClient(client);
-    console.log("✅ Client sélectionné:", client.nom);
   };
 
   // Créer un nouveau client
@@ -106,43 +145,42 @@ function DevisCreationCore() {
     addLine(product);
   };
 
-  /// Sauvegarder le devis AVEC SUPABASE
-const handleSave = async () => {
-  if (!selectedClient) {
-    alert("Veuillez sélectionner un client");
-    return;
-  }
-
-  if (lignes.length === 0) {
-    alert("Ajoutez au moins un produit au devis");
-    return;
-  }
-
-  setSaving(true);
-  
-  try {
-    // NOUVELLE VERSION SUPABASE
-    const savedDevisId = await saveDevis(
-      selectedClient,
-      dateValidite, // Seulement date validité
-      undefined // notes optionnelles
-    );
-    
-    console.log("✅ Devis sauvegardé en Supabase:", savedDevisId);
-    alert(`Devis sauvegardé avec succès en base de données !`);
-    
-    if (!devisId) {
-      router.push(`/devis?saved=${savedDevisId}`);
+  // Sauvegarder le devis AVEC SUPABASE
+  const handleSave = async () => {
+    if (!selectedClient) {
+      alert("Veuillez sélectionner un client");
+      return;
     }
+
+    if (lignes.length === 0) {
+      alert("Ajoutez au moins un produit au devis");
+      return;
+    }
+
+    setSaving(true);
     
-  } catch (error) {
-    console.error("❌ Erreur sauvegarde Supabase:", error);
-    const message = error instanceof Error ? error.message : "Erreur lors de la sauvegarde";
-    alert(`Erreur: ${message}`);
-  } finally {
-    setSaving(false);
-  }
-};
+    try {
+      const savedDevisId = await saveDevis(
+        selectedClient,
+        dateValidite,
+        undefined // notes optionnelles
+      );
+      
+      console.log("✅ Devis sauvegardé en Supabase:", savedDevisId);
+      alert(`Devis sauvegardé avec succès !`);
+      
+      if (!devisId) {
+        router.push(`/devis?saved=${savedDevisId}`);
+      }
+      
+    } catch (error) {
+      console.error("❌ Erreur sauvegarde Supabase:", error);
+      const message = error instanceof Error ? error.message : "Erreur lors de la sauvegarde";
+      alert(`Erreur: ${message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // Annuler et retourner
   const handleCancel = () => {
@@ -187,7 +225,7 @@ const handleSave = async () => {
     <>
       <DevisLayout
         client={selectedClient}
-        numeroDevis={numeroDevis}
+        numeroDevis={numeroDevis} // ✅ Maintenant utilisé le vrai numéro
         dateCreation={dateCreation}
         dateValidite={dateValidite}
         lignes={lignes}
