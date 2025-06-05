@@ -2,8 +2,7 @@
 
 import { cn } from "@/lib/utils/cn";
 import { DevisHeader } from "./DevisHeader";
-import { ProductCombobox } from "../../products/ProductCombobox";
-import { DevisTable } from "../table/DevisTable";
+import { ProductsZone } from "./ProductsZone"; // MODIFIÉE POUR INCLURE REFRESH
 import { MargeIndicators } from "../indicators/MargeIndicators";
 import { FinancialSummary } from "../summary/FinancialSummary";
 import { Client, DevisLine, Product, DevisCalculations } from "@/types";
@@ -18,21 +17,22 @@ interface DevisLayoutProps {
   onSave: () => void;
   onCancel: () => void;
   onExportPDF: () => void;
-  onSelectClient: (client: Client) => void;     // AJOUTÉ
-  onCreateClient?: () => void;                  // AJOUTÉ
+  onSelectClient: (client: Client) => void;
+  onCreateClient?: () => void;
   onAddProduct: any;
   onUpdateLine: (id: string, updates: Partial<DevisLine>) => void;
   onDeleteLine: (id: string) => void;
   onDuplicateLine: (id: string) => void;
+  onRefreshProducts: () => Promise<void>; // NOUVELLE PROP
   saving?: boolean;
-  isDirty?: boolean;                            // AJOUTÉ
-  lastSaved?: Date | null;                      // AJOUTÉ
-  isEditing?: boolean;                          // AJOUTÉ
+  isDirty?: boolean;
+  lastSaved?: Date | null;
+  isEditing?: boolean;
 }
 
 /**
- * Layout principal du devis CORRIGÉ
- * Transmission correcte de toutes les props
+ * Layout principal du devis AVEC SUPPORT ACTUALISATION
+ * Transmission de la fonction d'actualisation aux composants enfants
  */
 export function DevisLayout({
   client,
@@ -44,15 +44,16 @@ export function DevisLayout({
   onSave,
   onCancel,
   onExportPDF,
-  onSelectClient,        // NOUVELLE PROP
-  onCreateClient,        // NOUVELLE PROP
+  onSelectClient,
+  onCreateClient,
   onAddProduct,
   onUpdateLine,
   onDeleteLine,
   onDuplicateLine,
+  onRefreshProducts, // NOUVELLE PROP
   saving,
-  isDirty,              // NOUVELLE PROP
-  lastSaved,            // NOUVELLE PROP
+  isDirty,
+  lastSaved,
   isEditing
 }: DevisLayoutProps) {
 
@@ -70,36 +71,29 @@ export function DevisLayout({
             onSave={onSave}
             onCancel={onCancel}
             onExportPDF={onExportPDF}
-            onSelectClient={onSelectClient}    // TRANSMISSION PROP
-            onCreateClient={onCreateClient}    // TRANSMISSION PROP
+            onSelectClient={onSelectClient}
+            onCreateClient={onCreateClient}
             saving={saving}
-            isDirty={isDirty}                  // TRANSMISSION PROP
-            lastSaved={lastSaved}              // TRANSMISSION PROP
+            isDirty={isDirty}
+            lastSaved={lastSaved}
           />
 
           {/* Indicateurs de marge horizontaux */}
           <MargeIndicators calculations={calculations} />
 
-          {/* Barre de recherche produits */}
-          <div className={cn(
-            "p-4 rounded-xl border border-gray-200",
-            "bg-white/5 backdrop-blur-md"
-          )}>
-            <div className="flex items-center space-x-4">
-              <ProductCombobox
-                onSelect={onAddProduct}
-                placeholder="🔍 Rechercher et ajouter un produit au devis..."
-                className="flex-1"
-              />
-            </div>
-          </div>
-
-          {/* Tableau étendu pleine largeur */}
-          <DevisTable
+          {/* Zone produits avec recherche + actualisation */}
+          <ProductsZone
             lignes={lignes}
+            onAddProduct={onAddProduct}
             onUpdateLine={onUpdateLine}
             onDeleteLine={onDeleteLine}
             onDuplicateLine={onDuplicateLine}
+            onRefreshProducts={onRefreshProducts} // TRANSMISSION NOUVELLE PROP
+            totals={{
+              totalHT: calculations.totalHT,
+              totalTVA: calculations.totalTVA,
+              totalTTC: calculations.totalTTC
+            }}
             className="min-h-[400px]"
           />
 
