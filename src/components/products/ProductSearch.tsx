@@ -21,10 +21,8 @@ export function ProductSearch({ onSelect, className }: ProductSearchProps) {
     loading,
     searchQuery,
     selectedCategory,
-    sortBy,
     setSearchQuery,
     setSelectedCategory,
-    setSortBy,
     categories,
     stats
   } = useProducts();
@@ -118,25 +116,7 @@ export function ProductSearch({ onSelect, className }: ProductSearchProps) {
           </div>
 
           {/* Tri */}
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <TrendingUp className="w-5 h-5 text-gray-500" />
-            </div>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'name' | 'price' | 'margin')}
-              className={cn(
-                "pl-10 pr-8 py-3 rounded-lg transition-all duration-200 appearance-none",
-                "bg-gray-100 backdrop-blur-sm border border-gray-200",
-                "text-gray-900 dark:text-gray-100",
-                "focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50"
-              )}
-            >
-              <option value="name">Trier par nom</option>
-              <option value="price">Trier par prix</option>
-              <option value="margin">Trier par marge</option>
-            </select>
-          </div>
+          
         </div>
       </div>
 

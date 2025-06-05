@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Product } from "@/types";
-import { ProductStorage } from "@/lib/storage/productStorage";
-import { SIMPLIFIED_PRODUCTS } from "@/data/products/simplifiedProducts";
+import { supabase, handleSupabaseError } from "@/lib/database/supabase";
 
 interface UseProductsReturn {
   products: Product[];
@@ -11,12 +10,11 @@ interface UseProductsReturn {
   error: string | null;
   searchQuery: string;
   selectedCategory: string;
-  sortBy: 'name' | 'price' | 'margin';
+  categories: string[];
   setSearchQuery: (query: string) => void;
   setSelectedCategory: (category: string) => void;
-  setSortBy: (sort: 'name' | 'price' | 'margin') => void;
   getProductByCode: (code: string) => Product | null;
-  categories: string[];
+  refreshProducts: () => void;
   stats: {
     total: number;
     categories: number;
@@ -26,100 +24,115 @@ interface UseProductsReturn {
 }
 
 /**
- * Hook useProducts FINAL
- * Compatible avec simplifiedProducts.ts (ProductCreateInput[])
+ * Hook produits MIGRÉ vers Supabase
+ * Remplace complètement ProductStorage + simplifiedProducts
  */
 export function useProducts(): UseProductsReturn {
   const [products, setProducts] = useState<Product[]>([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]); // Cache complet
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("");
-  const [sortBy, setSortBy] = useState<'name' | 'price' | 'margin'>('name');
-  const [isClient, setIsClient] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
-  const [stats, setStats] = useState({
-    total: 0,
-    categories: 0,
-    margeGlobaleMoyenne: 0,
-    prixMoyen: 0
-  });
 
-  // Initialisation côté client avec diagnostic
-  useEffect(() => {
-    setIsClient(true);
-    console.log("🔍 Hook useProducts - Initialisation SIMPLIFIED_PRODUCTS");
-    console.log(`📦 Source: ${SIMPLIFIED_PRODUCTS.length} ProductCreateInput`);
-    ProductStorage.diagnostic();
-  }, []);
-
-  // Chargement et filtrage des produits
-  const loadProducts = useCallback(() => {
-    if (!isClient) return;
-    
+  // Charger TOUS les produits depuis Supabase
+  const loadAllProducts = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      // Récupérer produits convertis
-      let allProducts = ProductStorage.getProducts();
-      
-      console.log(`📦 Produits convertis chargés: ${allProducts.length}`);
-      
-      // VALIDATION critique
-      const expectedCount = SIMPLIFIED_PRODUCTS.length;
-      if (allProducts.length !== expectedCount) {
-        console.error(`❌ ERREUR: ${allProducts.length}/${expectedCount} produits!`);
-        setError(`Conversion échouée: ${allProducts.length}/${expectedCount} produits`);
-        return;
+
+      const { data, error: queryError } = await supabase
+        .from('produits')
+        .select(`
+          *,
+          categories(nom, color)
+        `)
+        .order('designation', { ascending: true });
+
+      if (queryError) {
+        handleSupabaseError(queryError);
       }
+
+      // Transformer pour compatibilité interface existante
+      const transformedProducts: Product[] = (data || []).map((p : any) => ({
+        code: p.code,
+        designation: p.designation,
+        prixAchat: Number(p.prix_achat),
+        prixVente: Number(p.prix_vente),
+        tva: Number(p.tva || 20),
+        colissage: p.colissage || 1,
+        categorie: p.categories?.nom || 'Autre',
+        unite: p.designation.toLowerCase().includes('bte') ? 'boîte' : 'pièce'
+      }));
+
+      setAllProducts(transformedProducts);
       
-      // Appliquer recherche
-      if (searchQuery) {
-        allProducts = ProductStorage.searchProducts(searchQuery);
-        console.log(`🔍 Recherche "${searchQuery}": ${allProducts.length} résultats`);
-      }
+      // Extraire catégories uniques
+      const uniqueCategories = [...new Set(transformedProducts.map(p => p.categorie))];
+      setCategories(uniqueCategories.sort());
       
-      // Appliquer filtre catégorie
-      if (selectedCategory) {
-        allProducts = allProducts.filter(p => p.categorie === selectedCategory);
-        console.log(`🏷️ Catégorie "${selectedCategory}": ${allProducts.length} produits`);
-      }
-      
-      // Appliquer tri
-      allProducts = ProductStorage.sortProducts(allProducts, sortBy);
-      
-      setProducts(allProducts);
-      
-      // Charger métadonnées une seule fois
-      if (categories.length === 0) {
-        const detectedCategories = ProductStorage.getCategories();
-        const detectedStats = ProductStorage.getProductStats();
-        setCategories(detectedCategories);
-        setStats(detectedStats);
-        
-        console.log(`🏷️ Catégories détectées: ${detectedCategories.join(', ')}`);
-        console.log(`📊 Stats: ${detectedStats.total} produits, marge ${detectedStats.margeGlobaleMoyenne.toFixed(1)}%`);
-      }
+      console.log(`✅ ${transformedProducts.length} produits chargés depuis Supabase`);
       
     } catch (err) {
-      console.error("❌ Erreur chargement produits:", err);
-      setError("Erreur lors du chargement des produits convertis");
+      const message = err instanceof Error ? err.message : 'Erreur chargement produits';
+      setError(message);
+      console.error('❌ Erreur produits DB:', err);
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, selectedCategory, sortBy, isClient, categories.length]);
+  }, []);
 
-  // Effet pour charger les produits
-  useEffect(() => {
-    loadProducts();
-  }, [loadProducts]);
+  // Filtrer produits selon recherche + catégorie
+  const filterProducts = useCallback(() => {
+    let filtered = [...allProducts];
+
+    // Filtre par recherche (nom ou code)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(p =>
+        p.designation.toLowerCase().includes(query) ||
+        p.code.toLowerCase().includes(query)
+      );
+    }
+
+    // Filtre par catégorie
+    if (selectedCategory) {
+      filtered = filtered.filter(p => p.categorie === selectedCategory);
+    }
+
+    setProducts(filtered);
+  }, [allProducts, searchQuery, selectedCategory]);
 
   // Récupérer un produit par code
   const getProductByCode = useCallback((code: string): Product | null => {
-    if (!isClient) return null;
-    return ProductStorage.getProductByCode(code);
-  }, [isClient]);
+    return allProducts.find(p => p.code === code) || null;
+  }, [allProducts]);
+
+  // Calcul des statistiques
+  const stats = {
+    total: allProducts.length,
+    categories: categories.length,
+    margeGlobaleMoyenne: allProducts.length > 0 
+      ? allProducts.reduce((sum, p) => {
+          const marge = ((p.prixVente - p.prixAchat) / p.prixAchat) * 100;
+          return sum + marge;
+        }, 0) / allProducts.length
+      : 0,
+    prixMoyen: allProducts.length > 0
+      ? allProducts.reduce((sum, p) => sum + p.prixVente, 0) / allProducts.length
+      : 0
+  };
+
+  // Charger tous les produits au montage
+  useEffect(() => {
+    loadAllProducts();
+  }, [loadAllProducts]);
+
+  // Filtrer quand recherche/catégorie change
+  useEffect(() => {
+    filterProducts();
+  }, [filterProducts]);
 
   return {
     products,
@@ -127,12 +140,11 @@ export function useProducts(): UseProductsReturn {
     error,
     searchQuery,
     selectedCategory,
-    sortBy,
+    categories,
     setSearchQuery,
     setSelectedCategory,
-    setSortBy,
     getProductByCode,
-    categories,
-    stats,
+    refreshProducts: loadAllProducts,
+    stats
   };
 }

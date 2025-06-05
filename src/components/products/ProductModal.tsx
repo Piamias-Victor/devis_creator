@@ -3,21 +3,29 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils/cn";
 import { X, Package } from "lucide-react";
-import { Product, ProductCreateInput, ProductUtils } from "@/types/product";
-import { PRODUCT_DEFAULTS } from "@/data/products/simplifiedProducts";
+import { Product } from "@/types";
 
 interface ProductModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (product: ProductCreateInput) => void;
+  onSave: (product: ProductFormData) => void;
   product?: Product | null;
   loading?: boolean;
 }
 
+// Interface pour les données du formulaire (compatible Supabase)
+interface ProductFormData {
+  code: string;
+  designation: string;
+  prix_achat: number;
+  prix_vente: number;
+  tva: number;
+  colissage: number;
+}
+
 /**
- * Modal de création/modification de produit
- * Formulaire avec validation et prévisualisation marge
- * Composant < 100 lignes
+ * Modal de création/modification de produit CORRIGÉE
+ * Compatible avec Supabase + validation stricte
  */
 export function ProductModal({
   isOpen,
@@ -26,23 +34,25 @@ export function ProductModal({
   product,
   loading
 }: ProductModalProps) {
-  const [formData, setFormData] = useState<ProductCreateInput>({
+  const [formData, setFormData] = useState<ProductFormData>({
     code: "",
     designation: "",
-    prixAchat: 0,
-    tva: PRODUCT_DEFAULTS.tva,
-    colissage: PRODUCT_DEFAULTS.colissage
+    prix_achat: 0,
+    prix_vente: 0,
+    tva: 20,
+    colissage: 1
   });
 
   const [errors, setErrors] = useState<string[]>([]);
 
-  // Initialiser le formulaire
+  // Initialiser le formulaire avec produit existant ou valeurs par défaut
   useEffect(() => {
     if (product) {
       setFormData({
         code: product.code,
         designation: product.designation,
-        prixAchat: product.prixAchat,
+        prix_achat: product.prixAchat,
+        prix_vente: product.prixVente,
         tva: product.tva,
         colissage: product.colissage
       });
@@ -50,13 +60,46 @@ export function ProductModal({
       setFormData({
         code: "",
         designation: "",
-        prixAchat: 0,
-        tva: PRODUCT_DEFAULTS.tva,
-        colissage: PRODUCT_DEFAULTS.colissage
+        prix_achat: 0,
+        prix_vente: 0,
+        tva: 20,
+        colissage: 1
       });
     }
     setErrors([]);
   }, [product, isOpen]);
+
+  // Validation du formulaire
+  const validateForm = (): boolean => {
+    const newErrors: string[] = [];
+
+    if (!formData.code.trim()) {
+      newErrors.push("Le code produit est obligatoire");
+    }
+
+    if (!formData.designation.trim()) {
+      newErrors.push("La désignation est obligatoire");
+    }
+
+    if (!formData.prix_achat || formData.prix_achat <= 0) {
+      newErrors.push("Le prix d'achat doit être supérieur à 0");
+    }
+
+    if (!formData.prix_vente || formData.prix_vente <= 0) {
+      newErrors.push("Le prix de vente doit être supérieur à 0");
+    }
+
+    if (formData.tva < 0 || formData.tva > 100) {
+      newErrors.push("La TVA doit être entre 0 et 100%");
+    }
+
+    if (!formData.colissage || formData.colissage < 1) {
+      newErrors.push("Le colissage doit être d'au moins 1");
+    }
+
+    setErrors(newErrors);
+    return newErrors.length === 0;
+  };
 
   // Gestion ESC
   useEffect(() => {
@@ -70,26 +113,34 @@ export function ProductModal({
     return () => document.removeEventListener("keydown", handleEsc);
   }, [isOpen, onClose]);
 
-  // Calculs en temps réel
-  const prixVenteCalcule = ProductUtils.calculatePrixVente(formData.prixAchat);
-  const margeCalculee = ProductUtils.calculateMargePercent(prixVenteCalcule, formData.prixAchat);
-
+  // Soumission du formulaire
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation
-    const validationErrors = ProductUtils.validateProduct(formData);
-    if (validationErrors.length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
+    if (!validateForm()) return;
     
-    setErrors([]);
-    onSave(formData);
+    // IMPORTANT: Convertir en nombres pour éviter l'erreur NULL
+    const sanitizedData: ProductFormData = {
+      code: formData.code.trim(),
+      designation: formData.designation.trim(),
+      prix_achat: Number(formData.prix_achat) || 0,
+      prix_vente: Number(formData.prix_vente) || 0,
+      tva: Number(formData.tva) || 20,
+      colissage: Number(formData.colissage) || 1
+    };
+    
+    console.log('🔍 Données envoyées à Supabase:', sanitizedData);
+    onSave(sanitizedData);
   };
 
-  const handleChange = (field: keyof ProductCreateInput, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  // Mise à jour des champs avec conversion automatique
+  const handleChange = (field: keyof ProductFormData, value: string | number) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: field === 'code' || field === 'designation' 
+        ? value 
+        : Number(value) || 0
+    }));
     setErrors([]); // Effacer les erreurs lors de la modification
   };
 
@@ -151,14 +202,14 @@ export function ProductModal({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Prix d'achat HT *
+                  Prix d'achat HT * (€)
                 </label>
                 <input
                   type="number"
                   step="0.0001"
-                  min="0"
-                  value={formData.prixAchat || ""}
-                  onChange={(e) => handleChange("prixAchat", parseFloat(e.target.value) || 0)}
+                  min="0.0001"
+                  value={formData.prix_achat || ""}
+                  onChange={(e) => handleChange("prix_achat", e.target.value)}
                   className={cn(
                     "w-full px-4 py-3 rounded-lg border transition-all duration-200",
                     "bg-gray-50 text-gray-900 placeholder-gray-500",
@@ -189,8 +240,27 @@ export function ProductModal({
               />
             </div>
 
-            {/* TVA et Colissage */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Prix vente, TVA et Colissage */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Prix vente HT * (€)
+                </label>
+                <input
+                  type="number"
+                  step="0.0001"
+                  min="0.0001"
+                  value={formData.prix_vente || ""}
+                  onChange={(e) => handleChange("prix_vente", e.target.value)}
+                  className={cn(
+                    "w-full px-4 py-3 rounded-lg border transition-all duration-200",
+                    "bg-gray-50 text-gray-900",
+                    "focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  )}
+                  required
+                />
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   TVA (%) *
@@ -200,7 +270,7 @@ export function ProductModal({
                   min="0"
                   max="100"
                   value={formData.tva || ""}
-                  onChange={(e) => handleChange("tva", parseFloat(e.target.value) || 0)}
+                  onChange={(e) => handleChange("tva", e.target.value)}
                   className={cn(
                     "w-full px-4 py-3 rounded-lg border transition-all duration-200",
                     "bg-gray-50 text-gray-900",
@@ -218,7 +288,7 @@ export function ProductModal({
                   type="number"
                   min="1"
                   value={formData.colissage || ""}
-                  onChange={(e) => handleChange("colissage", parseInt(e.target.value) || 1)}
+                  onChange={(e) => handleChange("colissage", e.target.value)}
                   className={cn(
                     "w-full px-4 py-3 rounded-lg border transition-all duration-200",
                     "bg-gray-50 text-gray-900",
@@ -230,7 +300,7 @@ export function ProductModal({
             </div>
 
             {/* Prévisualisation marge */}
-            {formData.prixAchat > 0 && (
+            {formData.prix_achat > 0 && formData.prix_vente > 0 && (
               <div className={cn(
                 "p-4 rounded-lg border",
                 "bg-indigo-50 border-indigo-200"
@@ -238,15 +308,15 @@ export function ProductModal({
                 <h4 className="font-medium text-indigo-900 mb-2">Calculs automatiques</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-indigo-700">Prix de vente HT:</span>
+                    <span className="text-indigo-700">Marge euros:</span>
                     <div className="font-semibold text-indigo-900">
-                      {prixVenteCalcule.toFixed(4)}€
+                      {(formData.prix_vente - formData.prix_achat).toFixed(4)}€
                     </div>
                   </div>
                   <div>
-                    <span className="text-indigo-700">Marge:</span>
+                    <span className="text-indigo-700">Marge %:</span>
                     <div className="font-semibold text-indigo-900">
-                      {margeCalculee.toFixed(1)}%
+                      {(((formData.prix_vente - formData.prix_achat) / formData.prix_achat) * 100).toFixed(1)}%
                     </div>
                   </div>
                 </div>

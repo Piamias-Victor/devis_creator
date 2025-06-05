@@ -1,51 +1,88 @@
 "use client";
 
 import { useState, useCallback, useMemo, useEffect } from "react";
-import { DevisLine, Product, DevisCalculations, Devis, Client } from "@/types";
+import { DevisLine, Product, DevisCalculations, Client } from "@/types";
 import { calculateLineAmounts, calculateDevisTotal } from "@/lib/utils/calculUtils";
-import { DevisStorage } from "@/lib/storage/devisStorage";
+import { DevisRepository } from "@/lib/repositories/devisRepository";
 
 interface UseDevisReturn {
   lignes: DevisLine[];
   calculations: DevisCalculations;
+  loading: boolean;
+  saving: boolean;
+  error: string | null;
   isDirty: boolean;
   lastSaved: Date | null;
+  devisId: string | null;
   addLine: (product: Product) => void;
   updateLine: (id: string, updates: Partial<DevisLine>) => void;
   deleteLine: (id: string) => void;
   duplicateLine: (id: string) => void;
   clearAll: () => void;
-  saveDevis: (client: Client, numero: string, dateCreation: Date, dateValidite: Date) => Promise<Devis>;
-  loadDevis: (devisId: string) => boolean;
+  saveDevis: (client: Client, dateValidite: Date, notes?: string) => Promise<string>;
+  loadDevis: (devisId: string) => Promise<boolean>;
   resetDevis: () => void;
 }
 
 /**
- * Hook personnalisé pour la gestion d'état du devis
- * AMÉLIORÉ avec sauvegarde/chargement automatique
+ * Hook devis CORRIGÉ avec chargement automatique
  */
 export function useDevis(initialDevisId?: string): UseDevisReturn {
   const [lignes, setLignes] = useState<DevisLine[]>([]);
-  const [isDirty, setIsDirty] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [devisId, setDevisId] = useState<string | null>(initialDevisId || null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [currentDevisId, setCurrentDevisId] = useState<string | null>(initialDevisId || null);
-
-  // Charger un devis existant au montage
-  useEffect(() => {
-    if (initialDevisId) {
-      loadDevis(initialDevisId);
-    }
-  }, [initialDevisId]);
 
   // Générer un ID unique pour une ligne
   const generateLineId = useCallback((): string => {
     return `ligne_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }, []);
 
-  // Marquer comme modifié
-  const markDirty = useCallback(() => {
-    setIsDirty(true);
+  // Charger un devis existant CORRIGÉ
+  const loadDevis = useCallback(async (devisIdToLoad: string): Promise<boolean> => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('🔄 Chargement devis depuis Supabase:', devisIdToLoad);
+
+      const devis = await DevisRepository.getDevisById(devisIdToLoad);
+      
+      if (!devis) {
+        setError("Devis introuvable");
+        return false;
+      }
+
+      console.log('✅ Devis trouvé:', devis.numero, 'avec', devis.lignes.length, 'lignes');
+      
+      // Recalculer les lignes pour s'assurer de la cohérence
+      const lignesRecalculees = devis.lignes.map(ligne => calculateLineAmounts(ligne));
+      
+      setLignes(lignesRecalculees);
+      setDevisId(devis.id);
+      setLastSaved(devis.updatedAt);
+      
+      console.log('✅ Devis chargé avec', lignesRecalculees.length, 'lignes recalculées');
+      return true;
+
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erreur chargement';
+      setError(message);
+      console.error('❌ Erreur chargement devis:', err);
+      return false;
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  // NOUVEAU : Chargement automatique au montage
+  useEffect(() => {
+    if (initialDevisId) {
+      console.log('🚀 Chargement automatique devis au montage:', initialDevisId);
+      loadDevis(initialDevisId);
+    }
+  }, [initialDevisId, loadDevis]);
 
   // Ajouter une ligne depuis un produit
   const addLine = useCallback((product: Product) => {
@@ -54,7 +91,7 @@ export function useDevis(initialDevisId?: string): UseDevisReturn {
       productCode: product.code,
       designation: product.designation,
       quantite: 1,
-      prixUnitaire: product.prixVente || 0, // Guard pour undefined
+      prixUnitaire: product.prixVente || 0,
       prixAchat: product.prixAchat,
       remise: 0,
       tva: product.tva,
@@ -63,10 +100,10 @@ export function useDevis(initialDevisId?: string): UseDevisReturn {
     
     const calculatedLine = calculateLineAmounts(newLine);
     setLignes(prev => [...prev, calculatedLine]);
-    markDirty();
-  }, [generateLineId, markDirty]);
+    setError(null);
+  }, [generateLineId]);
 
-  // Mettre à jour une ligne avec recalcul automatique
+  // Mettre à jour une ligne avec recalcul
   const updateLine = useCallback((id: string, updates: Partial<DevisLine>) => {
     setLignes(prev => prev.map(ligne => {
       if (ligne.id !== id) return ligne;
@@ -74,14 +111,14 @@ export function useDevis(initialDevisId?: string): UseDevisReturn {
       const updatedLine = { ...ligne, ...updates };
       return calculateLineAmounts(updatedLine);
     }));
-    markDirty();
-  }, [markDirty]);
+    setError(null);
+  }, []);
 
   // Supprimer une ligne
   const deleteLine = useCallback((id: string) => {
     setLignes(prev => prev.filter(ligne => ligne.id !== id));
-    markDirty();
-  }, [markDirty]);
+    setError(null);
+  }, []);
 
   // Dupliquer une ligne
   const duplicateLine = useCallback((id: string) => {
@@ -94,96 +131,101 @@ export function useDevis(initialDevisId?: string): UseDevisReturn {
     });
     
     setLignes(prev => [...prev, clonedLine]);
-    markDirty();
-  }, [lignes, generateLineId, markDirty]);
+    setError(null);
+  }, [lignes, generateLineId]);
 
   // Vider toutes les lignes
   const clearAll = useCallback(() => {
     if (lignes.length > 0) {
       if (confirm("Êtes-vous sûr de vouloir supprimer toutes les lignes ?")) {
         setLignes([]);
-        markDirty();
+        setError(null);
       }
     }
-  }, [lignes.length, markDirty]);
+  }, [lignes.length]);
 
-  // Sauvegarder le devis
+  // Sauvegarder le devis en Supabase
   const saveDevis = useCallback(async (
-    client: Client, 
-    numero: string, 
-    dateCreation: Date, 
-    dateValidite: Date
-  ): Promise<Devis> => {
-    const calculations = calculateDevisTotal(lignes);
-    
-    let savedDevis: Devis;
-    
-    if (currentDevisId) {
-      // Mise à jour d'un devis existant
-      const updates = {
-        lignes,
-        totalHT: calculations.totalHT,
-        totalTTC: calculations.totalTTC,
-        margeGlobale: calculations.margeGlobalePourcent,
-        clientId: client.id,
-        clientNom: client.nom,
-      };
-      
-      savedDevis = DevisStorage.updateDevis(currentDevisId, updates)!;
-    } else {
-      // Création d'un nouveau devis
-      savedDevis = DevisStorage.addDevis({
-        numero,
-        date: dateCreation,
-        dateValidite,
-        client,
-        lignes,
-        calculations
-      });
-      
-      setCurrentDevisId(savedDevis.id);
-    }
-    
-    setIsDirty(false);
-    setLastSaved(new Date());
-    
-    return savedDevis;
-  }, [lignes, currentDevisId]);
+    client: Client,
+    dateValidite: Date,
+    notes?: string
+  ): Promise<string> => {
+    try {
+      setSaving(true);
+      setError(null);
 
-  // Charger un devis existant
-  const loadDevis = useCallback((devisId: string): boolean => {
-    const devis = DevisStorage.getDevisById(devisId);
-    if (!devis) return false;
-    
-    // Recalculer les montants au chargement
-    const lignesRecalculees = devis.lignes.map(ligne => calculateLineAmounts(ligne));
-    
-    setLignes(lignesRecalculees);
-    setCurrentDevisId(devis.id);
-    setIsDirty(false);
-    setLastSaved(devis.updatedAt);
-    
-    return true;
-  }, []);
+      if (lignes.length === 0) {
+        throw new Error("Impossible de sauvegarder un devis vide");
+      }
+
+      const calculations = calculateDevisTotal(lignes);
+      const now = new Date();
+
+      const devisData = {
+        numero: devisId ? undefined : DevisRepository.generateNumeroDevis(), // Pas de nouveau numéro si modification
+        client_id: client.id,
+        date_creation: now.toISOString().split('T')[0],
+        date_validite: dateValidite.toISOString().split('T')[0],
+        lignes,
+        total_ht: calculations.totalHT,
+        total_tva: calculations.totalTVA,
+        total_ttc: calculations.totalTTC,
+        marge_globale_euros: calculations.margeGlobaleEuros,
+        marge_globale_pourcent: calculations.margeGlobalePourcent,
+        notes
+      };
+
+      let savedDevisId: string;
+
+      if (devisId) {
+        // Mise à jour
+        await DevisRepository.updateDevis(devisId, devisData);
+        savedDevisId = devisId;
+        console.log('✅ Devis mis à jour en Supabase:', devisId);
+      } else {
+        // Création
+        savedDevisId = await DevisRepository.createDevis(devisData as any);
+        setDevisId(savedDevisId);
+        console.log('✅ Nouveau devis créé en Supabase:', savedDevisId);
+      }
+
+      setLastSaved(new Date());
+      return savedDevisId;
+
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erreur sauvegarde';
+      setError(message);
+      throw err;
+    } finally {
+      setSaving(false);
+    }
+  }, [lignes, devisId]);
 
   // Réinitialiser le devis
   const resetDevis = useCallback(() => {
     setLignes([]);
-    setCurrentDevisId(null);
-    setIsDirty(false);
+    setDevisId(null);
     setLastSaved(null);
+    setError(null);
   }, []);
 
-  // Calculs en temps réel mémorisés
+  // Calculs en temps réel
   const calculations = useMemo(() => {
     return calculateDevisTotal(lignes);
   }, [lignes]);
 
+  // isDirty = true si modifications depuis dernière sauvegarde
+  const isDirty = lignes.length > 0 && (!lastSaved || !devisId);
+
   return {
     lignes,
     calculations,
+    loading,
+    saving,
+    error,
     isDirty,
     lastSaved,
+    devisId,
     addLine,
     updateLine,
     deleteLine,
@@ -191,6 +233,6 @@ export function useDevis(initialDevisId?: string): UseDevisReturn {
     clearAll,
     saveDevis,
     loadDevis,
-    resetDevis,
+    resetDevis
   };
 }

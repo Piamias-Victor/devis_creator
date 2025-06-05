@@ -109,6 +109,7 @@ export interface Devis {
   notes?: string; // Notes internes
   createdAt: Date;
   updatedAt: Date;
+  calculations?: any;
 }
 
 export interface DashboardStats {

@@ -1,11 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
-import { DevisStorage } from "@/lib/storage/devisStorage";
-import { Devis } from "@/types";
 import { formatPrice } from "@/lib/utils/devisUtils";
+import { useDevisList } from "@/lib/hooks/useDevisList";
 import { 
   FileText, 
   Plus, 
@@ -13,57 +11,31 @@ import {
   Edit, 
   Copy, 
   Trash2, 
-  Eye,
-  Filter,
-  BarChart3
+  Filter
 } from "lucide-react";
 
 /**
- * Page de liste des devis sauvegardés
- * CRUD complet avec recherche et filtres
+ * Page de liste des devis AVEC SUPABASE
+ * CRUD complet depuis base de données
  */
 export function DevisListPage() {
   const router = useRouter();
-  const [devis, setDevis] = useState<Devis[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  
+  const {
+    devis,
+    loading,
+    error,
+    searchQuery,
+    statusFilter,
+    stats,
+    setSearchQuery,
+    setStatusFilter,
+    deleteDevis,
+    refreshDevis,
+    duplicateDevis
+  } = useDevisList();
 
-  // Charger les devis
-  useEffect(() => {
-    loadDevis();
-  }, []);
-
-  const loadDevis = () => {
-    setLoading(true);
-    try {
-      let allDevis = DevisStorage.getDevis();
-      
-      // Appliquer recherche
-      if (searchQuery) {
-        allDevis = DevisStorage.searchDevis(searchQuery);
-      }
-      
-      // Appliquer filtre statut
-      if (statusFilter) {
-        allDevis = allDevis.filter(d => d.status === statusFilter);
-      }
-      
-      // Trier par date de création décroissante
-      allDevis.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-      
-      setDevis(allDevis);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Recharger quand recherche/filtre change
-  useEffect(() => {
-    loadDevis();
-  }, [searchQuery, statusFilter]);
-
-  // Supprimer un devis
+  // Supprimer un devis avec confirmation
   const handleDelete = async (devisId: string) => {
     const devisToDelete = devis.find(d => d.id === devisId);
     if (!devisToDelete) return;
@@ -73,30 +45,39 @@ export function DevisListPage() {
     }
     
     try {
-      const success = DevisStorage.deleteDevis(devisId);
+      const success = await deleteDevis(devisId);
       if (success) {
-        loadDevis(); // Recharger la liste
+        console.log('✅ Devis supprimé:', devisToDelete.numero);
+      } else {
+        alert("Erreur lors de la suppression");
       }
     } catch (error) {
       alert("Erreur lors de la suppression");
     }
   };
 
-  // Dupliquer un devis
-  const handleDuplicate = async (devisId: string) => {
-    try {
-      const duplicatedDevis = DevisStorage.duplicateDevis(devisId);
-      if (duplicatedDevis) {
-        loadDevis(); // Recharger la liste
-        alert(`Devis dupliqué : ${duplicatedDevis.numero}`);
-      }
-    } catch (error) {
-      alert("Erreur lors de la duplication");
+const handleDuplicate = async (devisId: string) => {
+  const devisToClone = devis.find(d => d.id === devisId);
+  if (!devisToClone) return;
+  
+  if (!confirm(`Dupliquer le devis ${devisToClone.numero} ?\n\nUn nouveau devis sera créé avec les mêmes produits.`)) {
+    return;
+  }
+  
+  try {
+    const newDevisId = await duplicateDevis(devisId);
+    
+    if (newDevisId) {
+         // Proposer d'ouvrir le nouveau devis
+      
+    } else {
+      alert("❌ Erreur lors de la duplication du devis");
     }
-  };
-
-  // Statistiques rapides
-  const stats = DevisStorage.getDevisStats();
+  } catch (error) {
+    alert("❌ Erreur lors de la duplication du devis");
+    console.error('Erreur duplication:', error);
+  }
+};
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -134,7 +115,7 @@ export function DevisListPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              Mes devis
+              Mes devis (Supabase)
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
               {stats.total} devis • {formatPrice(stats.chiffreAffaireMensuel)} ce mois
@@ -156,6 +137,19 @@ export function DevisListPage() {
           <span>Nouveau devis</span>
         </button>
       </div>
+
+      {/* Message d'erreur */}
+      {error && (
+        <div className="p-4 rounded-lg bg-red-50 border border-red-200">
+          <p className="text-red-700">{error}</p>
+          <button 
+            onClick={refreshDevis}
+            className="mt-2 text-sm text-red-600 hover:underline"
+          >
+            Réessayer
+          </button>
+        </div>
+      )}
 
       {/* Statistiques rapides */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -378,7 +372,7 @@ export function DevisListPage() {
                 </div>
                 
                 <span className="text-xs text-gray-500">
-                  {devis.lignes.length} produit{devis.lignes.length > 1 ? 's' : ''}
+                  Base de données
                 </span>
               </div>
             </div>

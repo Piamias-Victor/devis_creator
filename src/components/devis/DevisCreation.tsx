@@ -7,8 +7,8 @@ import { Client, Product } from "@/types";
 import { generateDevisNumber, calculateValidityDate } from "@/lib/utils/devisUtils";
 import { ClientStorage } from "@/lib/storage/clientStorage";
 import { PdfGenerator } from "@/lib/pdf/pdfGenerator";
-import { useDevis } from "@/lib/hooks/useDevis";
 import { ClientModal } from "../clients/ClientModal";
+import { useDevis } from "@/lib/hooks/useDevis";
 
 /**
  * Composant principal de création de devis
@@ -106,42 +106,43 @@ function DevisCreationCore() {
     addLine(product);
   };
 
-  // Sauvegarder le devis
-  const handleSave = async () => {
-    if (!selectedClient) {
-      alert("Veuillez sélectionner un client");
-      return;
-    }
+  /// Sauvegarder le devis AVEC SUPABASE
+const handleSave = async () => {
+  if (!selectedClient) {
+    alert("Veuillez sélectionner un client");
+    return;
+  }
 
-    if (lignes.length === 0) {
-      alert("Ajoutez au moins un produit au devis");
-      return;
-    }
+  if (lignes.length === 0) {
+    alert("Ajoutez au moins un produit au devis");
+    return;
+  }
 
-    setSaving(true);
+  setSaving(true);
+  
+  try {
+    // NOUVELLE VERSION SUPABASE
+    const savedDevisId = await saveDevis(
+      selectedClient,
+      dateValidite, // Seulement date validité
+      undefined // notes optionnelles
+    );
     
-    try {
-      const savedDevis = await saveDevis(
-        selectedClient,
-        numeroDevis,
-        dateCreation,
-        dateValidite
-      );
-      
-      console.log("✅ Devis sauvegardé:", savedDevis);
-      alert(`Devis ${savedDevis.numero} sauvegardé avec succès !`);
-      
-      if (!devisId) {
-        router.push(`/devis?saved=${savedDevis.id}`);
-      }
-      
-    } catch (error) {
-      console.error("❌ Erreur sauvegarde:", error);
-      alert("Erreur lors de la sauvegarde");
-    } finally {
-      setSaving(false);
+    console.log("✅ Devis sauvegardé en Supabase:", savedDevisId);
+    alert(`Devis sauvegardé avec succès en base de données !`);
+    
+    if (!devisId) {
+      router.push(`/devis?saved=${savedDevisId}`);
     }
-  };
+    
+  } catch (error) {
+    console.error("❌ Erreur sauvegarde Supabase:", error);
+    const message = error instanceof Error ? error.message : "Erreur lors de la sauvegarde";
+    alert(`Erreur: ${message}`);
+  } finally {
+    setSaving(false);
+  }
+};
 
   // Annuler et retourner
   const handleCancel = () => {
