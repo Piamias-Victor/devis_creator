@@ -152,7 +152,7 @@ export function ProductsManagementPage() {
       <ProductTable
         products={products}
         loading={loading}
-        sortBy={sortBy}
+        sortBy={sortBy as any}
         ascending={ascending}
         onSort={(field) => {
           if (sortBy === field) {
