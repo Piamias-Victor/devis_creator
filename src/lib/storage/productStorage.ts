@@ -1,34 +1,80 @@
-import { Product } from "@/types";
-import { REAL_PRODUCTS, REAL_PRODUCT_CATEGORIES } from "@/data/products/realProducts";
+import { Product, ProductCreateInput, createProductFromInput } from "@/types";
+import { SIMPLIFIED_PRODUCTS, PRODUCT_DEFAULTS } from "@/data/products/simplifiedProducts";
 
 const STORAGE_KEY = "devis_creator_products";
 
 /**
- * Gestionnaire de stockage localStorage pour les produits
- * CORRIGÉ - Force l'utilisation des vrais produits Molicare
+ * ProductStorage FINAL - Support simplifiedProducts.ts
+ * Conversion automatique ProductCreateInput -> Product
  */
 export class ProductStorage {
+  private static initialized = false;
+  private static convertedProducts: Product[] = [];
+
   /**
-   * Récupère tous les produits - FORCE les produits réels
+   * Convertit les SIMPLIFIED_PRODUCTS vers Product[]
    */
-  static getProducts(): Product[] {
-    // Vérification côté client uniquement
-    if (typeof window === "undefined") return REAL_PRODUCTS;
-    
-    try {
-      // FORCER LA RÉINITIALISATION avec les vrais produits
-      console.log("🔄 Initialisation forcée des vrais produits Molicare");
-      this.saveProducts(REAL_PRODUCTS);
-      return REAL_PRODUCTS;
-    } catch (error) {
-      console.error("Erreur lecture produits:", error);
-      return REAL_PRODUCTS;
+  private static convertSimplifiedProducts(): Product[] {
+    if (this.convertedProducts.length > 0) {
+      return this.convertedProducts;
     }
+
+    console.log("🔄 Conversion SIMPLIFIED_PRODUCTS vers Product[]");
+    
+    this.convertedProducts = SIMPLIFIED_PRODUCTS.map(input => 
+      createProductFromInput(input)
+    );
+    
+    console.log(`✅ ${this.convertedProducts.length} produits convertis`);
+    return this.convertedProducts;
   }
 
   /**
-   * Sauvegarde tous les produits en localStorage
+   * Récupère tous les produits convertis
    */
+  static getProducts(): Product[] {
+    if (typeof window === "undefined") {
+      return this.convertSimplifiedProducts();
+    }
+    
+    // FORCER UNE SEULE FOIS la conversion
+    if (!this.initialized) {
+      console.log("🚀 INITIALISATION SIMPLIFIED_PRODUCTS");
+      const converted = this.convertSimplifiedProducts();
+      localStorage.removeItem(STORAGE_KEY); // Vider ancien cache
+      this.saveProducts(converted);
+      this.initialized = true;
+      return converted;
+    }
+    
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (!stored) {
+        const converted = this.convertSimplifiedProducts();
+        this.saveProducts(converted);
+        return converted;
+      }
+      
+      const products = JSON.parse(stored);
+      
+      // VALIDATION : Nombre de produits attendu
+      const expectedCount = SIMPLIFIED_PRODUCTS.length;
+      if (products.length !== expectedCount) {
+        console.log(`⚠️ Cache incorrect (${products.length}/${expectedCount}), reconversion`);
+        const converted = this.convertSimplifiedProducts();
+        this.saveProducts(converted);
+        return converted;
+      }
+      
+      return products;
+    } catch (error) {
+      console.error("❌ Erreur lecture produits:", error);
+      const converted = this.convertSimplifiedProducts();
+      this.saveProducts(converted);
+      return converted;
+    }
+  }
+
   static saveProducts(products: Product[]): void {
     if (typeof window === "undefined") return;
     
@@ -36,24 +82,27 @@ export class ProductStorage {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
       console.log(`✅ ${products.length} produits sauvegardés`);
     } catch (error) {
-      console.error("Erreur sauvegarde produits:", error);
+      console.error("❌ Erreur sauvegarde:", error);
     }
   }
 
   /**
-   * FORCE la réinitialisation avec les vrais produits
+   * DIAGNOSTIC complet
    */
-  static forceRealProducts(): void {
-    if (typeof window === "undefined") return;
+  static diagnostic(): void {
+    const simplified = SIMPLIFIED_PRODUCTS.length;
+    const converted = this.getProducts().length;
+    const categories = this.getCategories().length;
     
-    console.log("🚀 RÉINITIALISATION FORCÉE des produits Molicare");
-    localStorage.removeItem(STORAGE_KEY); // Supprimer l'ancien cache
-    this.saveProducts(REAL_PRODUCTS); // Sauver les vrais produits
+    console.log("=== DIAGNOSTIC SIMPLIFIED_PRODUCTS ===");
+    console.log(`Source SIMPLIFIED_PRODUCTS: ${simplified}`);
+    console.log(`Produits convertis: ${converted}`);
+    console.log(`Catégories détectées: ${categories}`);
+    console.log(`Premier produit: ${SIMPLIFIED_PRODUCTS[0]?.designation}`);
+    console.log(`Prix vente calculé: ${this.getProducts()[0]?.prixVente}`);
+    console.log("======================================");
   }
 
-  /**
-   * Recherche produits optimisée pour codes EAN 13 chiffres
-   */
   static searchProducts(query: string): Product[] {
     const products = this.getProducts();
     const searchTerm = query.toLowerCase().trim();
@@ -63,48 +112,33 @@ export class ProductStorage {
     return products.filter(product =>
       product.designation.toLowerCase().includes(searchTerm) ||
       product.code.includes(searchTerm) ||
-      (product.categorie || "").toLowerCase().includes(searchTerm) // Guard pour undefined
+      product.categorie.toLowerCase().includes(searchTerm)
     );
   }
 
-  /**
-   * Filtre produits par catégorie réelle
-   */
-  static filterByCategory(category: string): Product[] {
-    const products = this.getProducts();
-    if (!category) return products;
-    
-    return products.filter(product => (product.categorie || "") === category); // Guard pour undefined
-  }
-
-  /**
-   * Récupère un produit par son code EAN
-   */
   static getProductByCode(code: string): Product | null {
-    const products = this.getProducts();
-    return products.find(product => product.code === code) || null;
+    return this.getProducts().find(p => p.code === code) || null;
   }
 
   /**
-   * Récupère les catégories réelles Molicare
+   * Catégories auto-détectées depuis les produits convertis
    */
   static getCategories(): string[] {
-    return [...REAL_PRODUCT_CATEGORIES];
+    const products = this.getProducts();
+    const categoriesSet = new Set(products.map(p => p.categorie));
+    return Array.from(categoriesSet).sort();
   }
 
-  /**
-   * Tri des produits avec gestion des marges réelles
-   */
   static sortProducts(products: Product[], sortBy: 'name' | 'price' | 'margin'): Product[] {
     return [...products].sort((a, b) => {
       switch (sortBy) {
         case 'name':
           return a.designation.localeCompare(b.designation);
         case 'price':
-          return (a.prixVente || 0) - (b.prixVente || 0); // Guard pour undefined
+          return a.prixVente - b.prixVente;
         case 'margin':
-          const margeA = a.prixVente && a.prixAchat ? ((a.prixVente - a.prixAchat) / a.prixAchat) * 100 : 0;
-          const margeB = b.prixVente && b.prixAchat ? ((b.prixVente - b.prixAchat) / b.prixAchat) * 100 : 0;
+          const margeA = ((a.prixVente - a.prixAchat) / a.prixAchat) * 100;
+          const margeB = ((b.prixVente - b.prixAchat) / b.prixAchat) * 100;
           return margeB - margeA;
         default:
           return 0;
@@ -112,41 +146,29 @@ export class ProductStorage {
     });
   }
 
-  /**
-   * Statistiques de la base réelle Molicare
-   */
-  static getProductStats(): {
-    total: number;
-    categories: number;
-    margeGlobaleMoyenne: number;
-    prixMoyen: number;
-  } {
-    const products = REAL_PRODUCTS; // Utiliser directement les vrais produits
+  static getProductStats() {
+    const products = this.getProducts();
     
-    const total = products.length;
-    const categories = REAL_PRODUCT_CATEGORIES.length;
+    if (products.length === 0) {
+      return { total: 0, categories: 0, margeGlobaleMoyenne: 0, prixMoyen: 0 };
+    }
     
-    const margeGlobaleMoyenne = products.reduce((sum, product) => {
-      if (!product.prixVente || !product.prixAchat) return sum; // Guard pour undefined
-      const marge = ((product.prixVente - product.prixAchat) / product.prixAchat) * 100;
-      return sum + marge;
+    const margeGlobaleMoyenne = products.reduce((sum, p) => {
+      return sum + ((p.prixVente - p.prixAchat) / p.prixAchat) * 100;
     }, 0) / products.length;
     
-    const prixMoyen = products.reduce((sum, product) => sum + (product.prixVente || 0), 0) / products.length;
+    const prixMoyen = products.reduce((sum, p) => sum + p.prixVente, 0) / products.length;
     
     return {
-      total,
-      categories,
+      total: products.length,
+      categories: this.getCategories().length,
       margeGlobaleMoyenne,
       prixMoyen
     };
   }
 }
 
-// INITIALISATION AUTOMATIQUE AU CHARGEMENT
+// DIAGNOSTIC automatique au chargement
 if (typeof window !== "undefined") {
-  // Force la réinitialisation à chaque chargement en développement
-  if (process.env.NODE_ENV === "development") {
-    ProductStorage.forceRealProducts();
-  }
+  ProductStorage.diagnostic();
 }

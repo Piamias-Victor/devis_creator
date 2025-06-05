@@ -13,15 +13,64 @@ export interface Client {
   createdAt: Date;
 }
 
+// Type de base existant
 export interface Product {
   code: string;
   designation: string;
   prixAchat: number;
-  prixVente: number; // Prix obligatoire, pas undefined
-  unite: string; // Ajouté - manquait dans l'interface
-  categorie: string; // Ajouté - manquait dans l'interface
+  prixVente: number;
+  unite: string;
+  categorie: string;
   colissage: number;
   tva: number;
+}
+
+// NOUVEAU : Type pour création produit (format simplifiedProducts.ts)
+export interface ProductCreateInput {
+  code: string;
+  designation: string;
+  prixAchat: number;
+  tva: number;
+  colissage: number;
+  // unite et categorie calculés automatiquement
+  // prixVente calculé automatiquement (marge 10%)
+}
+
+// Utilitaire de conversion ProductCreateInput -> Product
+export function createProductFromInput(input: ProductCreateInput): Product {
+  // Calcul prix vente avec marge 10%
+  const prixVente = input.prixAchat * 1.10;
+  
+  // Détermination automatique de l'unité
+  const unite = input.designation.toLowerCase().includes('bte') ||
+                input.designation.toLowerCase().includes('boîte') ? 'boîte' : 'pièce';
+  
+  // Détermination automatique de la catégorie
+  let categorie = "Incontinence"; // Par défaut
+  
+  if (input.designation.toLowerCase().includes('gant')) {
+    categorie = "Hygiène";
+  } else if (input.designation.toLowerCase().includes('bavoir')) {
+    categorie = "Hygiène";
+  } else if (input.designation.toLowerCase().includes('bed mat') || 
+             input.designation.toLowerCase().includes('alèse')) {
+    categorie = "Alèses";
+  } else if (input.designation.toLowerCase().includes('mobile')) {
+    categorie = "Sous-vêtements absorbants";
+  } else if (input.designation.toLowerCase().includes('elastic')) {
+    categorie = "Changes complets";
+  }
+  
+  return {
+    code: input.code,
+    designation: input.designation,
+    prixAchat: input.prixAchat,
+    prixVente: Math.round(prixVente * 10000) / 10000, // Arrondi 4 décimales
+    unite,
+    categorie,
+    colissage: input.colissage,
+    tva: input.tva
+  };
 }
 
 export interface DevisLine {
