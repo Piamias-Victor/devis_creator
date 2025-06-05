@@ -446,8 +446,17 @@ export const SIMPLIFIED_PRODUCTS: ProductCreateInput[] = [
     prixAchat: 0.0246,
     tva: 20,
     colissage: 1200
+  },
+
+  {
+    code: "E094-XL30-SC2",
+    designation: "Seni Classic plus XL Chang complet (8G)",
+    prixAchat: 0.0530,
+    tva: 20,
+    colissage: 90
   }
 ];
+
 
 /**
  * Configuration par défaut pour nouveaux produits
