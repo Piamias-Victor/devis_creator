@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Product, ProductCreateInput } from "@/types/product";
 import { ProductStorage } from "@/lib/storage/productStorage";
+import { smartProductSearch } from "../utils/smartProductSearch";
 
 interface UseProductsCRUDReturn {
   products: Product[];
@@ -64,20 +65,17 @@ export function useProductsCRUD(): UseProductsCRUDReturn {
         console.log("Codes disponibles (premiers 10):", allProducts.slice(0, 10).map(p => p.code));
       }
       
-      // Appliquer recherche si query
+      // Appliquer recherche INTELLIGENTE si query
       if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase().trim();
-        allProducts = allProducts.filter(product =>
-          product.designation.toLowerCase().includes(query) ||
-          product.code.toLowerCase().includes(query) ||
-          product.categorie.toLowerCase().includes(query)
-        );
+        allProducts = smartProductSearch(allProducts, searchQuery);
         
-        console.log(`🔍 Recherche "${searchQuery}": ${allProducts.length} résultats`);
+        console.log(`🔍 Recherche intelligente "${searchQuery}": ${allProducts.length} résultats`);
         
-        // Test spécial pour 165474
-        if (query === "165474") {
-          console.log("🔍 Recherche spéciale 165474:", allProducts);
+        // Test spécial pour différents types de recherche
+        if (searchQuery.includes("165474")) {
+          console.log("🔍 Recherche par code 165474:", allProducts);
+        } else if (searchQuery.toLowerCase().includes("molicare")) {
+          console.log("🔍 Recherche Molicare:", allProducts.slice(0, 3));
         }
       }
       
