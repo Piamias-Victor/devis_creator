@@ -4,22 +4,30 @@ import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils/cn";
 import { DevisLine } from "@/types";
 import { formatEuros, formatPourcent, getMargeColorClass, formatPriceUnit, parsePriceInput } from "@/lib/utils/calculUtils";
-import { Trash2, Copy, Package } from "lucide-react";
+import { Trash2, Copy, Package, Save } from "lucide-react";
 
 interface DevisTableRowProps {
   ligne: DevisLine;
   onUpdate: (id: string, updates: Partial<DevisLine>) => void;
   onDelete: (id: string) => void;
   onDuplicate: (id: string) => void;
+  onSaveToDatabase?: (ligne: DevisLine) => Promise<void>; // NOUVELLE PROP
 }
 
 /**
- * Ligne tableau étendue - MODIFIÉE avec 4 décimales
- * Code│Nom│Qté│Prix₳│Rem│Prix€│TVA%│Marge│HT│TVA│TTC│Actions (12 colonnes)
+ * Ligne tableau AVEC bouton sauvegarde DB
+ * Permet d'enregistrer les modifications directement en base
  */
-export function DevisTableRow({ ligne, onUpdate, onDelete, onDuplicate }: DevisTableRowProps) {
+export function DevisTableRow({ 
+  ligne, 
+  onUpdate, 
+  onDelete, 
+  onDuplicate,
+  onSaveToDatabase // NOUVELLE PROP
+}: DevisTableRowProps) {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>("");
+  const [saving, setSaving] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Focus automatique lors de l'édition
@@ -34,9 +42,8 @@ export function DevisTableRow({ ligne, onUpdate, onDelete, onDuplicate }: DevisT
   const startEdit = (field: string, currentValue: number) => {
     setEditingField(field);
     
-    // Format selon le type de champ
     if (field === "prixAchat" || field === "prixUnitaire") {
-      setEditValue(currentValue.toFixed(4)); // 4 décimales pour prix
+      setEditValue(currentValue.toFixed(4));
     } else {
       setEditValue(currentValue.toString());
     }
@@ -48,9 +55,8 @@ export function DevisTableRow({ ligne, onUpdate, onDelete, onDuplicate }: DevisT
     
     let numValue: number;
     
-    // Parse selon type de champ
     if (editingField === "prixAchat" || editingField === "prixUnitaire") {
-      numValue = parsePriceInput(editValue); // Validation 4 décimales
+      numValue = parsePriceInput(editValue);
     } else {
       numValue = parseFloat(editValue.replace(',', '.'));
       if (isNaN(numValue) || numValue < 0) {
@@ -89,6 +95,29 @@ export function DevisTableRow({ ligne, onUpdate, onDelete, onDuplicate }: DevisT
     }
   };
 
+  // NOUVEAU : Sauvegarder ligne en base de données
+  const handleSaveToDatabase = async () => {
+    if (!onSaveToDatabase) {
+      alert("Fonctionnalité de sauvegarde non disponible");
+      return;
+    }
+
+    if (!confirm(`Enregistrer les modifications de "${ligne.designation}" en base de données ?`)) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+      await onSaveToDatabase(ligne);
+      console.log('✅ Ligne sauvegardée en DB:', ligne.designation);
+    } catch (error) {
+      console.error('❌ Erreur sauvegarde ligne:', error);
+      alert('Erreur lors de la sauvegarde en base de données');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // Supprimer avec confirmation
   const handleDelete = () => {
     if (confirm("Supprimer cette ligne du devis ?")) {
@@ -96,7 +125,6 @@ export function DevisTableRow({ ligne, onUpdate, onDelete, onDuplicate }: DevisT
     }
   };
 
-  // Calculs (avec fallback si pas encore calculés)
   const nbColis = ligne.colissage ? Math.ceil(ligne.quantite / ligne.colissage) : null;
   const margeStyle = getMargeColorClass(ligne.margePourcent || 0);
 
@@ -232,30 +260,47 @@ export function DevisTableRow({ ligne, onUpdate, onDelete, onDuplicate }: DevisT
         </div>
       </td>
 
-      {/* 9. Total HT - 2 décimales final */}
+      {/* 9. Total HT */}
       <td className="px-3 py-3">
         <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
           {formatEuros(ligne.totalHT || 0)}
         </span>
       </td>
 
-      {/* 10. Total TVA - 2 décimales final */}
+      {/* 10. Total TVA */}
       <td className="px-3 py-3">
         <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">
           {formatEuros(ligne.totalTVA || 0)}
         </span>
       </td>
 
-      {/* 11. Total TTC - 2 décimales final */}
+      {/* 11. Total TTC */}
       <td className="px-3 py-3">
         <span className="text-sm font-bold text-green-600 dark:text-green-400">
           {formatEuros(ligne.totalTTC || 0)}
         </span>
       </td>
 
-      {/* 12. Actions */}
+      {/* 12. Actions ÉTENDUES */}
       <td className="px-3 py-3">
         <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* NOUVEAU : Bouton Sauvegarder en DB */}
+          {onSaveToDatabase && (
+            <button
+              onClick={handleSaveToDatabase}
+              disabled={saving}
+              className={cn(
+                "p-1 rounded transition-colors",
+                saving 
+                  ? "bg-gray-500/20 text-gray-400 cursor-not-allowed"
+                  : "hover:bg-green-500/20 text-green-600 dark:text-green-400"
+              )}
+              title="Enregistrer en base de données"
+            >
+              <Save className={cn("w-3 h-3", saving && "animate-pulse")} />
+            </button>
+          )}
+          
           <button
             onClick={() => onDuplicate(ligne.id)}
             className="p-1 rounded hover:bg-blue-500/20 text-blue-600 dark:text-blue-400"

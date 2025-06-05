@@ -11,22 +11,24 @@ interface DevisTableProps {
   onUpdateLine: (id: string, updates: Partial<DevisLine>) => void;
   onDeleteLine: (id: string) => void;
   onDuplicateLine: (id: string) => void;
+  onSaveLineToDatabase?: (ligne: DevisLine) => Promise<void>; // NOUVELLE PROP
   className?: string;
 }
 
 /**
- * Tableau devis MODIFIÉ - SANS backdrop-blur pour test z-index
- * Code│Nom│Qté│Prix₳│Rem│Prix€│TVA%│Marge│HT│TVA│TTC│Actions
+ * Tableau devis AVEC support sauvegarde ligne
+ * Transmission de la fonction de sauvegarde aux lignes
  */
 export function DevisTable({ 
   lignes, 
   onUpdateLine, 
   onDeleteLine, 
   onDuplicateLine,
+  onSaveLineToDatabase, // NOUVELLE PROP
   className 
 }: DevisTableProps) {
 
-  // Headers du tableau étendu
+  // Headers du tableau étendu avec colonne actions plus large
   const columns = [
     { key: "code", label: "Code", width: "w-20" },
     { key: "designation", label: "Désignation", width: "flex-1 min-w-[200px]" },
@@ -39,7 +41,7 @@ export function DevisTable({
     { key: "totalHT", label: "HT", width: "w-20" },
     { key: "totalTVA", label: "TVA", width: "w-20" },
     { key: "totalTTC", label: "TTC", width: "w-24" },
-    { key: "actions", label: "", width: "w-16" },
+    { key: "actions", label: "Actions", width: "w-20" }, // ÉLARGI pour 4 boutons
   ];
 
   if (lignes.length === 0) {
@@ -70,7 +72,6 @@ export function DevisTable({
   return (
     <div className={cn(
       "rounded-xl border border-gray-200 bg-white/5 overflow-hidden",
-      // SUPPRIMÉ: backdrop-blur-md
       className
     )}>
       <div className="overflow-x-auto">
@@ -78,7 +79,6 @@ export function DevisTable({
           {/* Header étendu */}
           <thead className={cn(
             "bg-gray-100/10 border-b border-gray-100/10"
-            // SUPPRIMÉ: backdrop-blur-sm
           )}>
             <tr>
               {columns.map((column) => (
@@ -105,6 +105,7 @@ export function DevisTable({
                 onUpdate={onUpdateLine}
                 onDelete={onDeleteLine}
                 onDuplicate={onDuplicateLine}
+                onSaveToDatabase={onSaveLineToDatabase} // TRANSMISSION NOUVELLE PROP
               />
             ))}
           </tbody>
@@ -112,7 +113,6 @@ export function DevisTable({
           {/* Footer avec totaux */}
           <tfoot className={cn(
             "bg-gray-100/20 border-t border-gray-200"
-            // SUPPRIMÉ: backdrop-blur-sm
           )}>
             <tr>
               <td colSpan={8} className="px-3 py-4 text-right font-semibold text-gray-900 dark:text-gray-100">
@@ -133,14 +133,16 @@ export function DevisTable({
         </table>
       </div>
 
-      {/* Instructions d'utilisation */}
+      {/* Instructions d'utilisation MISES À JOUR */}
       <div className={cn(
         "px-6 py-4 border-t border-gray-200",
         "bg-gray-50/50 text-sm text-gray-600 dark:text-gray-400"
       )}>
         <div className="flex justify-between items-center">
           <div>
-            💡 <strong>Double-cliquez</strong> sur Qté, Prix, Remise pour éditer • <strong>Enter</strong> valider • <strong>Escape</strong> annuler
+            💡 <strong>Double-cliquez</strong> sur Qté, Prix, Remise pour éditer • 
+            <strong>Bouton Save</strong> pour enregistrer en DB • 
+            <strong>Enter</strong> valider • <strong>Escape</strong> annuler
           </div>
           <div>
             {lignes.length} produit{lignes.length > 1 ? 's' : ''} • Calculs automatiques

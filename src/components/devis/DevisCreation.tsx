@@ -1,9 +1,8 @@
-"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { DevisLayout } from "./layout/DevisLayout";
-import { Client, Product } from "@/types";
+import { Client, DevisLine, Product } from "@/types";
 import { generateDevisNumber, calculateValidityDate } from "@/lib/utils/devisUtils";
 import { ClientStorage } from "@/lib/storage/clientStorage";
 import { PdfGenerator } from "@/lib/pdf/pdfGenerator";
@@ -11,6 +10,31 @@ import { ClientModal } from "../clients/ClientModal";
 import { useDevis } from "@/lib/hooks/useDevis";
 import { DevisRepository } from "@/lib/repositories/devisRepository";
 import { supabase } from "@/lib/database/supabase"; // NOUVEAU IMPORT
+
+const handleSaveLineToDatabase = async (ligne: DevisLine): Promise<void> => {
+  try {
+    console.log('💾 Sauvegarde ligne en DB:', ligne.designation);
+
+    const { error } = await supabase
+      .from('produits')
+      .update({
+        prix_achat: ligne.prixAchat || 0,
+        prix_vente: ligne.prixUnitaire,
+        tva: ligne.tva,
+        colissage: ligne.colissage || 1
+      })
+      .eq('code', ligne.productCode);
+
+    if (error) {
+      throw new Error(`Erreur lors de la mise à jour du produit : ${error.message}`);
+    }
+
+    console.log('✅ Ligne sauvegardée avec succès dans la base');
+  } catch (err) {
+    console.error('❌ Erreur lors de la sauvegarde de la ligne :', err);
+    alert(`Erreur lors de la sauvegarde de la ligne : ${(err as Error).message}`);
+  }
+};
 
 /**
  * Composant principal de création de devis AVEC ACTUALISATION PRODUITS
@@ -323,6 +347,7 @@ function DevisCreationCore() {
         isDirty={isDirty}
         lastSaved={lastSaved}
         isEditing={!!devisId}
+        onSaveLineToDatabase={handleSaveLineToDatabase} // NOUVELLE PROP
       />
 
       {/* Modal création client */}

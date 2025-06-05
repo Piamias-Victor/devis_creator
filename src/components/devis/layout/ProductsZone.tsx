@@ -13,7 +13,8 @@ interface ProductsZoneProps {
   onUpdateLine: (id: string, updates: Partial<DevisLine>) => void;
   onDeleteLine: (id: string) => void;
   onDuplicateLine: (id: string) => void;
-  onRefreshProducts: () => Promise<void>; // NOUVELLE PROP
+  onRefreshProducts: () => Promise<void>;
+  onSaveLineToDatabase?: (ligne: DevisLine) => Promise<void>; // NOUVELLE PROP
   totals: {
     totalHT: number;
     totalTVA: number;
@@ -32,7 +33,8 @@ export function ProductsZone({
   onUpdateLine, 
   onDeleteLine,
   onDuplicateLine,
-  onRefreshProducts, // NOUVELLE PROP
+  onRefreshProducts,
+  onSaveLineToDatabase, // NOUVELLE PROP
   totals,
   className 
 }: ProductsZoneProps) {
@@ -144,6 +146,7 @@ export function ProductsZone({
         onUpdateLine={onUpdateLine}
         onDeleteLine={onDeleteLine}
         onDuplicateLine={onDuplicateLine}
+        onSaveLineToDatabase={onSaveLineToDatabase} // TRANSMISSION NOUVELLE PROP
         className="min-h-[400px]"
       />
 

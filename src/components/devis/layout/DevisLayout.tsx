@@ -23,7 +23,8 @@ interface DevisLayoutProps {
   onUpdateLine: (id: string, updates: Partial<DevisLine>) => void;
   onDeleteLine: (id: string) => void;
   onDuplicateLine: (id: string) => void;
-  onRefreshProducts: () => Promise<void>; // NOUVELLE PROP
+  onRefreshProducts: () => Promise<void>;
+  onSaveLineToDatabase?: (ligne: DevisLine) => Promise<void>; // NOUVELLE PROP
   saving?: boolean;
   isDirty?: boolean;
   lastSaved?: Date | null;
@@ -50,7 +51,8 @@ export function DevisLayout({
   onUpdateLine,
   onDeleteLine,
   onDuplicateLine,
-  onRefreshProducts, // NOUVELLE PROP
+  onRefreshProducts,
+  onSaveLineToDatabase, // NOUVELLE PROP
   saving,
   isDirty,
   lastSaved,
@@ -88,7 +90,8 @@ export function DevisLayout({
             onUpdateLine={onUpdateLine}
             onDeleteLine={onDeleteLine}
             onDuplicateLine={onDuplicateLine}
-            onRefreshProducts={onRefreshProducts} // TRANSMISSION NOUVELLE PROP
+            onRefreshProducts={onRefreshProducts}
+            onSaveLineToDatabase={onSaveLineToDatabase} // TRANSMISSION NOUVELLE PROP
             totals={{
               totalHT: calculations.totalHT,
               totalTVA: calculations.totalTVA,
