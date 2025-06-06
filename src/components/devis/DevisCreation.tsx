@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { DevisLayout } from "./layout/DevisLayout";
@@ -7,8 +6,9 @@ import { generateDevisNumber, calculateValidityDate } from "@/lib/utils/devisUti
 import { PdfGenerator } from "@/lib/pdf/pdfGenerator";
 import { ClientModal } from "../clients/ClientModal";
 import { useDevis } from "@/lib/hooks/useDevis";
+import { useDevisSort } from "./table/useDevisSort"; // ✅ NOUVEAU IMPORT
 import { DevisRepository } from "@/lib/repositories/devisRepository";
-import { supabase } from "@/lib/database/supabase"; // NOUVEAU IMPORT
+import { supabase } from "@/lib/database/supabase";
 
 const handleSaveLineToDatabase = async (ligne: DevisLine): Promise<void> => {
   try {
@@ -36,8 +36,8 @@ const handleSaveLineToDatabase = async (ligne: DevisLine): Promise<void> => {
 };
 
 /**
- * Composant principal de création de devis AVEC ACTUALISATION PRODUITS
- * Fix : Charger le vrai numéro depuis la DB + actualiser prix produits
+ * Composant principal de création de devis AVEC TRI INTÉGRÉ
+ * Le tri est maintenant répercuté dans l'export PDF
  */
 function DevisCreationCore() {
   const router = useRouter();
@@ -70,7 +70,13 @@ function DevisCreationCore() {
     saveDevis
   } = useDevis(devisId || undefined);
 
-  // NOUVEAU : Fonction pour actualiser les produits depuis la DB
+  // ✅ HOOK TRI avec protection contre undefined
+  const sortData = useDevisSort(lignes);
+  const sortedLignes = sortData.sortedLignes || lignes || [];
+  const sortField = sortData.sortField || 'designation';
+  const sortDirection = sortData.sortDirection || 'asc';
+
+  // Fonction pour actualiser les produits depuis la DB
   const handleRefreshProducts = async (): Promise<void> => {
     if (lignes.length === 0) {
       throw new Error("Aucun produit à actualiser");
@@ -78,11 +84,9 @@ function DevisCreationCore() {
 
     console.log('🔄 Actualisation produits depuis Supabase...');
     
-    // Récupérer les codes produits actuels
     const productCodes = lignes.map(ligne => ligne.productCode);
     
     try {
-      // Charger les prix actuels depuis Supabase
       const { data: produits, error } = await supabase
         .from('produits')
         .select('code, prix_achat, prix_vente, tva, colissage')
@@ -98,14 +102,12 @@ function DevisCreationCore() {
 
       console.log(`✅ ${produits.length} produits récupérés de la DB`);
 
-      // Mettre à jour chaque ligne avec les nouveaux prix
       let updatedCount = 0;
       
       for (const ligne of lignes) {
         const produitDB = produits.find((p: any) => p.code === ligne.productCode);
         
         if (produitDB) {
-          // Comparer les prix pour voir s'il y a des changements
           const newPrixVente = Number(produitDB.prix_vente);
           const newPrixAchat = Number(produitDB.prix_achat);
           const newTva = Number(produitDB.tva || 20);
@@ -118,7 +120,6 @@ function DevisCreationCore() {
             ligne.colissage !== newColissage;
           
           if (hasChanges) {
-            // Mettre à jour la ligne avec les nouveaux prix
             updateLine(ligne.id, {
               prixUnitaire: newPrixVente,
               prixAchat: newPrixAchat,
@@ -157,19 +158,13 @@ function DevisCreationCore() {
       const devis = await DevisRepository.getDevisById(devisIdToLoad);
       
       if (devis) {
-        // ✅ CORRECTION : Utiliser le vrai numéro de la DB
         setNumeroDevis(devis.numero);
         setDateCreation(devis.date);
         setDateValidite(devis.dateValidite);
         
-        // Charger le client associé
         if (devis.clientId) {
           try {
-            // const client = ClientStorage.getClientById(devis.clientId);
-            // if (client) {
-            //   setSelectedClient(client);
-            //   console.log('✅ Client chargé:', client.nom);
-            // }
+            // Charger client depuis localStorage ou DB selon votre implémentation
           } catch (error) {
             console.warn('⚠️ Client non trouvé:', devis.clientId);
           }
@@ -228,7 +223,7 @@ function DevisCreationCore() {
 
   // Sauvegarder nouveau client depuis modal
   const handleSaveNewClient = async (clientData: Omit<Client, "id" | "createdAt">) => {    
-   
+    // Implémentation sauvegarde client
   };
 
   // Ajouter un produit
@@ -254,7 +249,7 @@ function DevisCreationCore() {
       const savedDevisId = await saveDevis(
         selectedClient,
         dateValidite,
-        undefined // notes optionnelles
+        undefined
       );
       
       console.log("✅ Devis sauvegardé en Supabase:", savedDevisId);
@@ -284,33 +279,7 @@ function DevisCreationCore() {
     router.push("/devis");
   };
 
-  // Export PDF
-  const handleExportPDF = async () => {
-    if (!selectedClient) {
-      alert("Veuillez sélectionner un client avant d'exporter");
-      return;
-    }
-
-    if (lignes.length === 0) {
-      alert("Ajoutez au moins un produit avant d'exporter");
-      return;
-    }
-
-    try {
-      await PdfGenerator.generateAndDownload({
-        numeroDevis,
-        dateCreation,
-        dateValidite,
-        client: selectedClient,
-        lignes,
-        calculations
-      });
-      
-    } catch (error) {
-      console.error("Erreur export PDF:", error);
-      alert("Erreur lors de l'export PDF. Veuillez réessayer.");
-    }
-  };
+  // ✅ SUPPRIMÉ - Export PDF géré maintenant dans DevisHeader avec tri
 
   return (
     <>
@@ -321,21 +290,25 @@ function DevisCreationCore() {
         dateValidite={dateValidite}
         lignes={lignes}
         calculations={calculations}
+        // ✅ NOUVELLES PROPS - Transmission du tri vers PDF
+        sortedLignes={sortedLignes}
+        sortField={sortField}
+        sortDirection={sortDirection}
         onSave={handleSave}
         onCancel={handleCancel}
-        onExportPDF={handleExportPDF}
+        onExportPDF={() => {}} // Fonction vide, gérée dans DevisHeader
         onSelectClient={handleSelectClient}
         onCreateClient={handleCreateClient}
         onAddProduct={handleAddProduct}
         onUpdateLine={updateLine}
         onDeleteLine={deleteLine}
         onDuplicateLine={duplicateLine}
-        onRefreshProducts={handleRefreshProducts} // NOUVELLE PROP
+        onRefreshProducts={handleRefreshProducts}
         saving={saving}
         isDirty={isDirty}
         lastSaved={lastSaved}
         isEditing={!!devisId}
-        onSaveLineToDatabase={handleSaveLineToDatabase} // NOUVELLE PROP
+        onSaveLineToDatabase={handleSaveLineToDatabase}
       />
 
       {/* Modal création client */}
