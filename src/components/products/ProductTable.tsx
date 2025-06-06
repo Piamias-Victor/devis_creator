@@ -1,11 +1,11 @@
 "use client";
 
 import { cn } from "@/lib/utils/cn";
-import { Product, ProductSortBy } from "@/types"; // ✅ Import depuis types unifiés
-import { Edit, Trash2, ChevronUp, ChevronDown, Package } from "lucide-react";
+import { Product, ProductSortBy } from "@/types";
+import { Edit, Trash2, Copy, ChevronUp, ChevronDown, Package } from "lucide-react";
 import { formatPriceUnit } from "@/lib/utils/calculUtils";
 
-// ✅ Utilitaire ProductUtils local (puisque supprimé de types)
+// ✅ Utilitaire ProductUtils local
 class ProductUtils {
   static calculateMargePercent(prixVente: number, prixAchat: number): number {
     if (prixAchat === 0) return 0;
@@ -21,12 +21,12 @@ interface ProductTableProps {
   onSort: (field: ProductSortBy) => void;
   onEdit: (product: Product) => void;
   onDelete: (product: Product) => void;
+  onDuplicate: (product: Product) => void; // ✅ NOUVELLE PROP
 }
 
 /**
- * Tableau produits en ligne avec tri et actions
- * Affichage compact et professionnel
- * Composant < 100 lignes
+ * Tableau produits AVEC bouton dupliquer
+ * Ajout action duplication avec icône Copy
  */
 export function ProductTable({
   products,
@@ -35,7 +35,8 @@ export function ProductTable({
   ascending,
   onSort,
   onEdit,
-  onDelete
+  onDelete,
+  onDuplicate // ✅ NOUVELLE PROP
 }: ProductTableProps) {
 
   // Configuration des colonnes
@@ -47,7 +48,7 @@ export function ProductTable({
     { key: 'tva', label: 'TVA%', width: 'w-20', sortable: false },
     { key: 'colissage', label: 'Colissage', width: 'w-24', sortable: false },
     { key: 'marge', label: 'Marge', width: 'w-24', sortable: false },
-    { key: 'actions', label: 'Actions', width: 'w-24', sortable: false }
+    { key: 'actions', label: 'Actions', width: 'w-32', sortable: false } // ✅ ÉLARGI pour 3 boutons
   ];
 
   // Composant en-tête de colonne avec tri
@@ -177,9 +178,21 @@ export function ProductTable({
                     {marge.toFixed(1)}%
                   </td>
 
-                  {/* Actions */}
+                  {/* Actions ÉTENDUES */}
                   <td className="px-4 py-3">
                     <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {/* ✅ NOUVEAU : Bouton Dupliquer */}
+                      <button
+                        onClick={() => onDuplicate(product)}
+                        className={cn(
+                          "p-1 rounded hover:bg-green-500/20 text-green-600 dark:text-green-400",
+                          "transition-colors duration-200"
+                        )}
+                        title="Dupliquer ce produit"
+                      >
+                        <Copy className="w-4 h-4" />
+                      </button>
+                      
                       <button
                         onClick={() => onEdit(product)}
                         className={cn(
@@ -217,7 +230,7 @@ export function ProductTable({
       )}>
         <div className="flex justify-between items-center">
           <span>{products.length} produit{products.length > 1 ? 's' : ''} affiché{products.length > 1 ? 's' : ''}</span>
-          <span>💡 Survolez une ligne pour voir les actions</span>
+          <span>💡 Survolez une ligne pour voir les actions • <Copy className="w-3 h-3 inline mx-1" /> pour dupliquer</span>
         </div>
       </div>
     </div>

@@ -9,8 +9,8 @@ import { ProductModal } from "./ProductModal";
 import { Product } from "@/types";
 
 /**
- * Page principale de gestion des produits CORRIGÉE
- * Interface CRUD complète avec Supabase + guards
+ * Page principale de gestion des produits AVEC DUPLICATION
+ * Interface CRUD complète + fonction dupliquer
  */
 export function ProductsManagementPage() {
   const {
@@ -29,6 +29,7 @@ export function ProductsManagementPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isDuplicating, setIsDuplicating] = useState(false); // ✅ NOUVEAU STATE
 
   // GUARDS pour éviter les erreurs undefined
   const safeStats = {
@@ -41,13 +42,34 @@ export function ProductsManagementPage() {
   // Créer nouveau produit
   const handleCreate = () => {
     setEditingProduct(null);
+    setIsDuplicating(false); // ✅ RESET flag duplication
     setIsModalOpen(true);
   };
 
   // Modifier produit
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
+    setIsDuplicating(false); // ✅ Mode modification
     setIsModalOpen(true);
+  };
+
+  // ✅ NOUVELLE FONCTION : Dupliquer produit
+  const handleDuplicate = (product: Product) => {
+    console.log('🔄 Duplication produit:', product.designation);
+    
+    // Créer un produit "clone" avec nouveau code
+    const duplicatedProduct: Product = {
+      ...product,
+      code: `${product.code}_COPY`, // Suffixe pour éviter conflit
+      designation: `COPIE - ${product.designation}`,
+      // Garder tous les autres champs identiques
+    };
+    
+    setEditingProduct(duplicatedProduct);
+    setIsDuplicating(true); // ✅ Flag duplication
+    setIsModalOpen(true);
+    
+    console.log('✅ Modal ouverte en mode duplication avec données pré-remplies');
   };
 
   // Supprimer produit
@@ -61,20 +83,34 @@ export function ProductsManagementPage() {
     }
   };
 
-  // Sauvegarder produit (création/modification)
+  // Sauvegarder produit (création/modification/duplication)
   const handleSave = async (productData: any) => {
     try {
-      if (editingProduct) {
+      if (editingProduct && !isDuplicating) {
+        // ✅ Mode modification classique
         await updateProduct(editingProduct.code, productData);
+        console.log('✅ Produit modifié:', productData.designation);
       } else {
+        // ✅ Mode création OU duplication (nouveau produit dans les 2 cas)
         await addProduct(productData);
+        console.log('✅ Produit créé/dupliqué:', productData.designation);
       }
+      
       setIsModalOpen(false);
       setEditingProduct(null);
+      setIsDuplicating(false); // ✅ RESET flag
+      
     } catch (error) {
       const message = error instanceof Error ? error.message : "Erreur inconnue";
       alert(message);
     }
+  };
+
+  // ✅ FONCTION pour fermer modal avec reset
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setEditingProduct(null);
+    setIsDuplicating(false); // ✅ RESET flag
   };
 
   return (
@@ -159,27 +195,26 @@ export function ProductsManagementPage() {
         />
       </div>
 
-      {/* Tableau des produits */}
+      {/* Tableau des produits AVEC DUPLICATION */}
       <ProductTable
         products={products}
         loading={loading}
         sortBy="designation"
         ascending={true}
         onSort={() => {}} // Placeholder pour le tri
-        onEdit={handleEdit as any}
-        onDelete={handleDelete as any}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onDuplicate={handleDuplicate} // ✅ NOUVELLE PROP
       />
 
-      {/* Modal création/modification */}
+      {/* Modal création/modification/duplication */}
       <ProductModal
         isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingProduct(null);
-        }}
+        onClose={handleCloseModal} // ✅ Fonction avec reset
         onSave={handleSave}
         product={editingProduct}
         loading={crudLoading}
+        isDuplicating={isDuplicating} // ✅ NOUVELLE PROP optionnelle
       />
     </div>
   );
