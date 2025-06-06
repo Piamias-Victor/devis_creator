@@ -62,7 +62,7 @@ export function Dashboard() {
       if (clientsError) throw clientsError;
 
       // Clients uniques ce mois
-      const clientsUniques = new Set(clientsData?.map(d => d.client_id) || []);
+      const clientsUniques = new Set(clientsData?.map((d : any) => d.client_id) || []);
       const clientsActifs = clientsUniques.size;
 
       // 3. Calcul des tendances (comparaison mois précédent)
@@ -78,10 +78,10 @@ export function Dashboard() {
       if (lastMonthError) throw lastMonthError;
 
       // Calculs tendances
-      const lastMonthClients = new Set(lastMonthData?.map(d => d.client_id) || []).size;
-      const lastMonthCA = lastMonthData?.reduce((sum, d) => sum + Number(d.total_ttc || 0), 0) || 0;
+      const lastMonthClients = new Set(lastMonthData?.map((d : any) => d.client_id) || []).size;
+      const lastMonthCA = lastMonthData?.reduce((sum : any, d: any) => sum + Number(d.total_ttc || 0), 0) || 0;
       const lastMonthMarge = lastMonthData?.length > 0 
-        ? lastMonthData.reduce((sum, d) => sum + Number(d.marge_globale_pourcent || 0), 0) / lastMonthData.length 
+        ? lastMonthData.reduce((sum : any, d: any) => sum + Number(d.marge_globale_pourcent || 0), 0) / lastMonthData.length 
         : 0;
 
       const trends = {
