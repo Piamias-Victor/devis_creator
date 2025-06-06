@@ -71,7 +71,7 @@ export function DevisTable({
 
   return (
     <div className={cn(
-      "rounded-xl border border-gray-200 bg-white/5 overflow-hidden",
+      "rounded-xl border border-gray-200 bg-white/5 overflow-hidden w-full",
       className
     )}>
       <div className="overflow-x-auto">
@@ -85,7 +85,7 @@ export function DevisTable({
                 <th
                   key={column.key}
                   className={cn(
-                    "px-3 py-4 text-left text-xs font-semibold uppercase tracking-wider",
+                    "px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider",
                     "text-gray-700 dark:text-gray-300",
                     column.width
                   )}
