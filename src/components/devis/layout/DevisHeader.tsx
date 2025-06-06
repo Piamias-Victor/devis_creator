@@ -1,10 +1,11 @@
 "use client";
 
 import { cn } from "@/lib/utils/cn";
-import { Client } from "@/types";
+import { Client, DevisLine, DevisCalculations } from "@/types";
 import { Save, FileX, FileText, ArrowLeft } from "lucide-react";
 import { formatPrice } from "@/lib/utils/devisUtils";
 import { ClientSelector } from "../ClientSelector";
+import { PdfGenerator } from "@/lib/pdf/pdfGenerator";
 
 interface DevisHeaderProps {
   client: Client | null;
@@ -12,6 +13,9 @@ interface DevisHeaderProps {
   dateCreation: Date;
   dateValidite: Date;
   totalTTC: number;
+  // NOUVELLES PROPS pour tri
+  sortedLignes: DevisLine[];
+  calculations: DevisCalculations;
   onSave: () => void;
   onCancel: () => void;
   onExportPDF: () => void;
@@ -23,8 +27,8 @@ interface DevisHeaderProps {
 }
 
 /**
- * Header du devis AVEC sélecteur de client
- * Navigation + métadonnées + sélection client + toolbar actions
+ * Header AVEC export PDF trié
+ * Utilise les lignes triées pour générer le PDF
  */
 export function DevisHeader({
   client,
@@ -32,6 +36,9 @@ export function DevisHeader({
   dateCreation,
   dateValidite,
   totalTTC,
+  // NOUVELLES PROPS
+  sortedLignes,
+  calculations,
   onSave,
   onCancel,
   onExportPDF,
@@ -41,6 +48,39 @@ export function DevisHeader({
   isDirty,
   lastSaved
 }: DevisHeaderProps) {
+  
+  // NOUVELLE FONCTION - Export PDF avec tri CORRIGÉE
+  const handleExportPDFSorted = async () => {
+    if (!client) {
+      alert("Veuillez sélectionner un client avant d'exporter");
+      return;
+    }
+
+    // ✅ PROTECTION contre undefined
+    if (!sortedLignes || sortedLignes.length === 0) {
+      alert("Ajoutez au moins un produit avant d'exporter");
+      return;
+    }
+
+    try {
+      console.log(`📄 Export PDF avec ${sortedLignes.length} lignes triées`);
+      
+      await PdfGenerator.generateAndDownload({
+        numeroDevis,
+        dateCreation,
+        dateValidite,
+        client,
+        lignes: sortedLignes, // ✅ UTILISER LES LIGNES TRIÉES
+        calculations
+      });
+      
+      console.log('✅ PDF généré avec ordre de tri respecté');
+      
+    } catch (error) {
+      console.error("❌ Erreur export PDF:", error);
+      alert("Erreur lors de l'export PDF. Veuillez réessayer.");
+    }
+  };
   
   return (
     <div className="space-y-4">
@@ -141,9 +181,10 @@ export function DevisHeader({
 
           {/* Actions toolbar */}
           <div className="flex items-center space-x-3 ml-6">
+            {/* BOUTON PDF MODIFIÉ - Utilise les lignes triées + PROTECTION */}
             <button
-              onClick={onExportPDF}
-              disabled={!client || totalTTC === 0}
+              onClick={handleExportPDFSorted}
+              disabled={!client || !sortedLignes || sortedLignes.length === 0}
               className={cn(
                 "flex items-center space-x-2 px-4 py-2 rounded-lg",
                 "bg-gray-200 hover:bg-gray-300 border border-white/30",
@@ -152,9 +193,10 @@ export function DevisHeader({
                 "disabled:opacity-50 disabled:cursor-not-allowed",
                 "hover:-translate-y-0.5"
               )}
+              title="Export PDF avec ordre de tri actuel"
             >
               <FileText className="w-4 h-4" />
-              <span>Export PDF</span>
+              <span>Export PDF trié</span>
             </button>
 
             <button

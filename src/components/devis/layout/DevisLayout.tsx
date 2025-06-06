@@ -2,10 +2,11 @@
 
 import { cn } from "@/lib/utils/cn";
 import { DevisHeader } from "./DevisHeader";
-import { ProductsZone } from "./ProductsZone"; // MODIFIÉE POUR INCLURE REFRESH
+import { ProductsZone } from "./ProductsZone";
 import { MargeIndicators } from "../indicators/MargeIndicators";
 import { FinancialSummary } from "../summary/FinancialSummary";
 import { Client, DevisLine, Product, DevisCalculations } from "@/types";
+import { DevisSortField, SortDirection } from "../table/useDevisSort";
 
 interface DevisLayoutProps {
   client: Client | null;
@@ -14,6 +15,10 @@ interface DevisLayoutProps {
   dateValidite: Date;
   lignes: DevisLine[];
   calculations: DevisCalculations;
+  // NOUVELLES PROPS pour le tri
+  sortedLignes: DevisLine[];
+  sortField: DevisSortField;
+  sortDirection: SortDirection;
   onSave: () => void;
   onCancel: () => void;
   onExportPDF: () => void;
@@ -24,7 +29,7 @@ interface DevisLayoutProps {
   onDeleteLine: (id: string) => void;
   onDuplicateLine: (id: string) => void;
   onRefreshProducts: () => Promise<void>;
-  onSaveLineToDatabase?: (ligne: DevisLine) => Promise<void>; // NOUVELLE PROP
+  onSaveLineToDatabase?: (ligne: DevisLine) => Promise<void>;
   saving?: boolean;
   isDirty?: boolean;
   lastSaved?: Date | null;
@@ -32,8 +37,8 @@ interface DevisLayoutProps {
 }
 
 /**
- * Layout principal du devis AVEC SUPPORT ACTUALISATION
- * Transmission de la fonction d'actualisation aux composants enfants
+ * Layout principal AVEC TRANSMISSION TRI
+ * Passe les lignes triées au header pour export PDF
  */
 export function DevisLayout({
   client,
@@ -42,6 +47,10 @@ export function DevisLayout({
   dateValidite,
   lignes,
   calculations,
+  // NOUVELLES PROPS tri
+  sortedLignes,
+  sortField,
+  sortDirection,
   onSave,
   onCancel,
   onExportPDF,
@@ -52,7 +61,7 @@ export function DevisLayout({
   onDeleteLine,
   onDuplicateLine,
   onRefreshProducts,
-  onSaveLineToDatabase, // NOUVELLE PROP
+  onSaveLineToDatabase,
   saving,
   isDirty,
   lastSaved,
@@ -63,13 +72,16 @@ export function DevisLayout({
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
       <div className="w-full px-4 py-6">
         <div className="space-y-6 max-w-none">
-          {/* Header avec infos devis et sélecteur client */}
+          {/* Header AVEC lignes triées pour PDF + PROTECTION */}
           <DevisHeader
             client={client}
             numeroDevis={numeroDevis}
             dateCreation={dateCreation}
             dateValidite={dateValidite}
             totalTTC={calculations.totalTTC}
+            // ✅ PROTECTION - Valeurs par défaut si undefined
+            sortedLignes={sortedLignes || lignes || []}
+            calculations={calculations}
             onSave={onSave}
             onCancel={onCancel}
             onExportPDF={onExportPDF}
@@ -80,10 +92,28 @@ export function DevisLayout({
             lastSaved={lastSaved}
           />
 
-          {/* Indicateurs de marge horizontaux */}
+          {/* Indicateur tri actuel */}
+          {lignes.length > 0 && (
+            <div className={cn(
+              "p-3 rounded-lg border border-blue-200",
+              "bg-blue-50/50 backdrop-blur-sm text-center"
+            )}>
+              <span className="text-sm text-blue-700">
+                📊 Ordre actuel: <strong>{sortField === 'designation' ? 'Alphabétique' : 
+                                      sortField === 'quantite' ? 'Quantité' :
+                                      sortField === 'prixUnitaire' ? 'Prix unitaire' :
+                                      sortField === 'margePourcent' ? 'Marge %' :
+                                      sortField === 'totalTTC' ? 'Total TTC' : 'Défaut'}</strong> 
+                ({sortDirection === 'asc' ? 'Croissant ↑' : 'Décroissant ↓'}) 
+                • Le PDF respectera cet ordre
+              </span>
+            </div>
+          )}
+
+          {/* Indicateurs de marge */}
           <MargeIndicators calculations={calculations} />
 
-          {/* Zone produits avec recherche + actualisation */}
+          {/* Zone produits avec tri intégré */}
           <ProductsZone
             lignes={lignes}
             onAddProduct={onAddProduct}
@@ -91,7 +121,7 @@ export function DevisLayout({
             onDeleteLine={onDeleteLine}
             onDuplicateLine={onDuplicateLine}
             onRefreshProducts={onRefreshProducts}
-            onSaveLineToDatabase={onSaveLineToDatabase} // TRANSMISSION NOUVELLE PROP
+            onSaveLineToDatabase={onSaveLineToDatabase}
             totals={{
               totalHT: calculations.totalHT,
               totalTVA: calculations.totalTVA,
@@ -100,10 +130,10 @@ export function DevisLayout({
             className="min-h-[400px] w-full"
           />
 
-          {/* Résumé financier en bas */}
+          {/* Résumé financier */}
           <FinancialSummary calculations={calculations} />
 
-          {/* Footer avec mentions légales */}
+          {/* Footer */}
           <div className={cn(
             "p-4 rounded-lg border border-white/10",
             "bg-white/5 backdrop-blur-sm text-center"
