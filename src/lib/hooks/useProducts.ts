@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Product } from "@/types";
 import { supabase, handleSupabaseError } from "@/lib/database/supabase";
 
+
 interface UseProductsReturn {
   products: Product[];
   loading: boolean;
