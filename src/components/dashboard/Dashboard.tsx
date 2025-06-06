@@ -2,7 +2,6 @@
 
 import { StatsCard } from "./StatsCard";
 import { HeroSection } from "./HeroSection";
-import { MOCK_DASHBOARD_STATS } from "@/data/mockData";
 import { 
   FileText, 
   TrendingUp, 
@@ -15,7 +14,13 @@ import {
  * Vue d'ensemble métiers + statistiques
  */
 export function Dashboard() {
-  const stats = MOCK_DASHBOARD_STATS;
+  // Stats en dur temporaires
+  const stats = {
+    totalDevis: 42,
+    chiffreAffaires: 125890,
+    margeGlobale: 18.5,
+    clientsActifs: 28
+  };
 
   // Formatage des valeurs pour affichage
   const formatCurrency = (value: number) => 
@@ -71,15 +76,15 @@ export function Dashboard() {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Placeholder pour futures fonctionnalités */}
-          <div className="h-32 rounded-xl bg-white/5 border border-gray100 backdrop-blur-md flex items-center justify-center">
+          <div className="h-32 rounded-xl bg-white/5 border border-gray-200 backdrop-blur-md flex items-center justify-center">
             <p className="text-gray-500 dark:text-gray-400">Devis récents</p>
           </div>
           
-          <div className="h-32 rounded-xl bg-white/5 border border-gray100 backdrop-blur-md flex items-center justify-center">
+          <div className="h-32 rounded-xl bg-white/5 border border-gray-200 backdrop-blur-md flex items-center justify-center">
             <p className="text-gray-500 dark:text-gray-400">Clients récents</p>
           </div>
           
-          <div className="h-32 rounded-xl bg-white/5 border border-gray100 backdrop-blur-md flex items-center justify-center">
+          <div className="h-32 rounded-xl bg-white/5 border border-gray-200 backdrop-blur-md flex items-center justify-center">
             <p className="text-gray-500 dark:text-gray-400">Statistiques</p>
           </div>
         </div>

@@ -4,7 +4,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { DevisLayout } from "./layout/DevisLayout";
 import { Client, DevisLine, Product } from "@/types";
 import { generateDevisNumber, calculateValidityDate } from "@/lib/utils/devisUtils";
-import { ClientStorage } from "@/lib/storage/clientStorage";
 import { PdfGenerator } from "@/lib/pdf/pdfGenerator";
 import { ClientModal } from "../clients/ClientModal";
 import { useDevis } from "@/lib/hooks/useDevis";
@@ -228,19 +227,8 @@ function DevisCreationCore() {
   };
 
   // Sauvegarder nouveau client depuis modal
-  const handleSaveNewClient = async (clientData: Omit<Client, "id" | "createdAt">) => {
-    setClientModalLoading(true);
-    
-    try {
-      const newClient = ClientStorage.addClient(clientData);
-      setSelectedClient(newClient);
-      setShowClientModal(false);
-      console.log("✅ Nouveau client créé et sélectionné:", newClient.nom);
-    } catch (error) {
-      alert("Erreur lors de la création du client");
-    } finally {
-      setClientModalLoading(false);
-    }
+  const handleSaveNewClient = async (clientData: Omit<Client, "id" | "createdAt">) => {    
+   
   };
 
   // Ajouter un produit
