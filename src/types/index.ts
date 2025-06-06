@@ -1,8 +1,11 @@
 /**
- * Types principaux de l'application ÉTENDUS
- * Support complet des devis sauvegardés
+ * TYPES UNIFIÉS - SOURCE DE VÉRITÉ UNIQUE
+ * Tous les autres fichiers importent depuis ici
  */
 
+// ============================================
+// TYPES CLIENT
+// ============================================
 export interface Client {
   id: string;
   nom: string;
@@ -13,113 +16,95 @@ export interface Client {
   createdAt: Date;
 }
 
-// Type de base existant
-export interface Product {
-  code: string;
-  designation: string;
-  prixAchat: number;
-  prixVente: number;
-  unite: string;
-  categorie: string;
-  colissage: number;
-  tva: number;
+export interface ClientCreateInput {
+  nom: string;
+  adresse: string;
+  telephone: string;
+  email: string;
+  siret: string;
 }
 
-// NOUVEAU : Type pour création produit (format simplifiedProducts.ts)
+// ============================================
+// TYPES PRODUIT UNIFIÉS
+// ============================================
+export interface Product {
+  code: string;              // Code EAN ou référence
+  designation: string;       // Nom du produit
+  prixAchat: number;        // Prix d'achat HT (obligatoire)
+  prixVente: number;        // Prix de vente HT (obligatoire)
+  tva: number;              // Taux TVA (généralement 20)
+  colissage: number;        // Nombre d'unités par colis
+  categorie: string;        // Nom de la catégorie
+  unite: string;            // Unité (pièce, boîte, etc.)
+  createdAt?: Date;         // Date de création
+  updatedAt?: Date;         // Date de modification
+}
+
 export interface ProductCreateInput {
   code: string;
   designation: string;
   prixAchat: number;
+  prixVente: number;
   tva: number;
   colissage: number;
-  // unite et categorie calculés automatiquement
-  // prixVente calculé automatiquement (marge 10%)
+  categorie?: string;       // Optionnel, défaut "Incontinence"
 }
 
-// Utilitaire de conversion ProductCreateInput -> Product
-export function createProductFromInput(input: ProductCreateInput): Product {
-  // Calcul prix vente avec marge 10%
-  const prixVente = input.prixAchat * 1.10;
-  
-  // Détermination automatique de l'unité
-  const unite = input.designation.toLowerCase().includes('bte') ||
-                input.designation.toLowerCase().includes('boîte') ? 'boîte' : 'pièce';
-  
-  // Détermination automatique de la catégorie
-  let categorie = "Incontinence"; // Par défaut
-  
-  if (input.designation.toLowerCase().includes('gant')) {
-    categorie = "Hygiène";
-  } else if (input.designation.toLowerCase().includes('bavoir')) {
-    categorie = "Hygiène";
-  } else if (input.designation.toLowerCase().includes('bed mat') || 
-             input.designation.toLowerCase().includes('alèse')) {
-    categorie = "Alèses";
-  } else if (input.designation.toLowerCase().includes('mobile')) {
-    categorie = "Sous-vêtements absorbants";
-  } else if (input.designation.toLowerCase().includes('elastic')) {
-    categorie = "Changes complets";
-  }
-  
-  return {
-    code: input.code,
-    designation: input.designation,
-    prixAchat: input.prixAchat,
-    prixVente: Math.round(prixVente * 10000) / 10000, // Arrondi 4 décimales
-    unite,
-    categorie,
-    colissage: input.colissage,
-    tva: input.tva
-  };
+export interface ProductUpdateInput {
+  code: string;             // Obligatoire pour identification
+  designation?: string;
+  prixAchat?: number;
+  prixVente?: number;
+  tva?: number;
+  colissage?: number;
+  categorie?: string;
 }
 
+// ============================================
+// TYPES DEVIS ET LIGNES
+// ============================================
 export interface DevisLine {
   id: string;
   productCode: string;
   designation: string;
   quantite: number;
-  prixUnitaire: number; // Prix de vente base
-  prixAchat?: number; // Pour calcul marge
-  remise: number; // Pourcentage
-  tva: number;
-  colissage?: number; // Pour calcul nb colis
+  prixUnitaire: number;     // Prix de vente de base
+  prixAchat?: number;       // Pour calcul marge
+  remise: number;           // Pourcentage de remise
+  tva: number;              // Taux TVA
+  colissage?: number;       // Pour calcul nb colis
   
-  // Calculs automatiques
-  prixApresRemise?: number;  // Prix après remise
-  totalHT?: number;          // Qté × PrixApresRemise
-  totalTVA?: number;         // TotalHT × TVA/100
-  totalTTC?: number;         // TotalHT + TotalTVA
-  margeEuros?: number;       // (PrixApresRemise - PrixAchat) × Qté
-  margePourcent?: number;    // MargeEuros / (PrixAchat × Qté) × 100
+  // Calculs automatiques (calculés, pas stockés)
+  prixApresRemise?: number;
+  totalHT?: number;
+  totalTVA?: number;
+  totalTTC?: number;
+  margeEuros?: number;
+  margePourcent?: number;
 }
 
-// NOUVEAU : Interface Devis complète
 export interface Devis {
   id: string;
   numero: string;
   date: Date;
   dateValidite: Date;
   clientId: string;
-  clientNom?: string; // Pour affichage rapide sans lookup
+  clientNom?: string;       // Cache pour affichage
   lignes: DevisLine[];
-  status: 'brouillon' | 'envoye' | 'accepte' | 'refuse' | 'expire';
+  status: DevisStatus;
   totalHT: number;
   totalTTC: number;
-  margeGlobale: number; // Pourcentage
-  notes?: string; // Notes internes
+  margeGlobale: number;     // Pourcentage
+  notes?: string;
   createdAt: Date;
   updatedAt: Date;
-  calculations?: any;
 }
 
-export interface DashboardStats {
-  totalDevis: number;
-  chiffreAffaires: number;
-  margeGlobale: number;
-  clientsActifs: number;
-}
+export type DevisStatus = 'brouillon' | 'envoye' | 'accepte' | 'refuse' | 'expire';
 
-// Calculs globaux temps réel
+// ============================================
+// TYPES CALCULS ET STATS
+// ============================================
 export interface DevisCalculations {
   totalHT: number;
   totalTVA: number;
@@ -130,18 +115,146 @@ export interface DevisCalculations {
   quantiteTotale: number;
 }
 
-// NOUVEAU : États de formulaire devis
+export interface DashboardStats {
+  totalDevis: number;
+  chiffreAffaires: number;
+  margeGlobale: number;
+  clientsActifs: number;
+}
+
+export interface ProductStats {
+  total: number;
+  categories: number;
+  margeGlobaleMoyenne: number;
+  prixMoyen: number;
+}
+
+// ============================================
+// TYPES FORMULAIRES ET UI
+// ============================================
 export interface DevisFormState {
   isEditing: boolean;
-  isDirty: boolean; // Modifications non sauvegardées
+  isDirty: boolean;
   lastSaved?: Date;
   autoSaveEnabled: boolean;
 }
 
-// NOUVEAU : Options d'export
 export interface DevisExportOptions {
   includeMarges: boolean;
   includeDetails: boolean;
   format: 'pdf' | 'excel' | 'csv';
   template: 'standard' | 'minimal' | 'detaille';
+}
+
+// ============================================
+// TYPES RECHERCHE ET FILTRES
+// ============================================
+export interface ProductFilters {
+  searchQuery?: string;
+  categorie?: string;
+  minPrix?: number;
+  maxPrix?: number;
+  tvaOnly?: number;
+}
+
+export type ProductSortBy = 'designation' | 'code' | 'prixAchat' | 'prixVente' | 'categorie' | 'createdAt';
+
+// ============================================
+// TYPES DATABASE (pour Supabase)
+// ============================================
+export interface ProductDB {
+  id: string;
+  code: string;
+  designation: string;
+  prix_achat: number;
+  prix_vente: number;
+  tva: number;
+  colissage: number;
+  categorie_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ClientDB {
+  id: string;
+  nom: string;
+  adresse: string;
+  telephone: string;
+  email: string;
+  siret: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DevisDB {
+  id: string;
+  numero: string;
+  client_id: string;
+  date_creation: string;
+  date_validite: string;
+  status: string;
+  total_ht: number;
+  total_ttc: number;
+  marge_globale_pourcent: number;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// ============================================
+// UTILITAIRES TYPES
+// ============================================
+
+/**
+ * Transforme ProductDB en Product pour l'interface
+ */
+export function transformProductFromDB(
+  productDB: ProductDB, 
+  categoryName: string = 'Incontinence'
+): Product {
+  return {
+    code: productDB.code,
+    designation: productDB.designation,
+    prixAchat: Number(productDB.prix_achat),
+    prixVente: Number(productDB.prix_vente),
+    tva: Number(productDB.tva),
+    colissage: productDB.colissage,
+    categorie: categoryName,
+    unite: productDB.designation.toLowerCase().includes('bte') ? 'boîte' : 'pièce',
+    createdAt: new Date(productDB.created_at),
+    updatedAt: new Date(productDB.updated_at)
+  };
+}
+
+/**
+ * Transforme Product en données pour Supabase
+ */
+export function transformProductToDB(
+  product: ProductCreateInput,
+  categorieId: string
+): Omit<ProductDB, 'id' | 'created_at' | 'updated_at'> {
+  return {
+    code: product.code,
+    designation: product.designation,
+    prix_achat: product.prixAchat,
+    prix_vente: product.prixVente,
+    tva: product.tva,
+    colissage: product.colissage,
+    categorie_id: categorieId
+  };
+}
+
+/**
+ * Transforme ClientDB en Client pour l'interface
+ */
+export function transformClientFromDB(clientDB: ClientDB): Client {
+  return {
+    id: clientDB.id,
+    nom: clientDB.nom,
+    adresse: clientDB.adresse,
+    telephone: clientDB.telephone,
+    email: clientDB.email,
+    siret: clientDB.siret,
+    createdAt: new Date(clientDB.created_at)
+  };
 }

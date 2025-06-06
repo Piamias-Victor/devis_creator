@@ -1,9 +1,17 @@
 "use client";
 
 import { cn } from "@/lib/utils/cn";
-import { Product, ProductSortBy, ProductUtils } from "@/types/product";
+import { Product, ProductSortBy } from "@/types"; // ✅ Import depuis types unifiés
 import { Edit, Trash2, ChevronUp, ChevronDown, Package } from "lucide-react";
-import { formatPriceUnit, formatEuros } from "@/lib/utils/calculUtils";
+import { formatPriceUnit } from "@/lib/utils/calculUtils";
+
+// ✅ Utilitaire ProductUtils local (puisque supprimé de types)
+class ProductUtils {
+  static calculateMargePercent(prixVente: number, prixAchat: number): number {
+    if (prixAchat === 0) return 0;
+    return ((prixVente - prixAchat) / prixAchat) * 100;
+  }
+}
 
 interface ProductTableProps {
   products: Product[];
