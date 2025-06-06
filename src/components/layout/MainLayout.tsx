@@ -20,12 +20,12 @@ export function MainLayout({ children, className }: MainLayoutProps) {
       <Navigation />
       
       {/* Zone de contenu principale */}
-      <main className={cn(
-        "ml-64 pt-6 pb-8 px-8",
-        "min-h-[calc(100vh-80px)]",
+       <main className={cn(
+        "ml-16 pt-6 pb-8 px-6 transition-all duration-300",
+        "min-h-[calc(100vh-80px)] w-[calc(100vw-4rem)]",
         className
       )}>
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-none w-full">
           {children}
         </div>
       </main>

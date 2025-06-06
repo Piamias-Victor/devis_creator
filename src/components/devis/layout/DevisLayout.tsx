@@ -61,8 +61,8 @@ export function DevisLayout({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
-      <div className="container mx-auto px-6 py-6 max-w-full">
-        <div className="space-y-6">
+      <div className="w-full px-4 py-6">
+        <div className="space-y-6 max-w-none">
           {/* Header avec infos devis et sélecteur client */}
           <DevisHeader
             client={client}
@@ -97,7 +97,7 @@ export function DevisLayout({
               totalTVA: calculations.totalTVA,
               totalTTC: calculations.totalTTC
             }}
-            className="min-h-[400px]"
+            className="min-h-[400px] w-full"
           />
 
           {/* Résumé financier en bas */}
