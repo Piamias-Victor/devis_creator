@@ -25,7 +25,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: "dashboard", label: "Tableau de bord", icon: Home, href: "/" },
   { id: "devis-new", label: "Créer un devis", icon: FileText, href: "/devis/new" },
   { id: "devis-list", label: "Mes devis", icon: List, href: "/devis" }, // NOUVEAU
-  { id: "clients", label: "Clients", icon: Users, href: "/clients", badge: 12 },
+  { id: "clients", label: "Clients", icon: Users, href: "/clients" },
   { id: "products", label: "Produits", icon: Package, href: "/products" },
   { id: "stats", label: "Statistiques", icon: BarChart3, href: "/stats" },
   { id: "archive", label: "Archives", icon: Archive, href: "/archive" },
