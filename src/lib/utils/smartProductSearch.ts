@@ -1,5 +1,3 @@
-import { Product } from "@/types/product";
-
 /**
  * Recherche intelligente de produits
  * Recherche par mots-clés partiels avec logique ET

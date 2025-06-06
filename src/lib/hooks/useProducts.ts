@@ -1,9 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Product } from "@/types";
+import { 
+  Product, 
+  ProductStats, 
+  ProductFilters,
+  transformProductFromDB 
+} from "@/types";
 import { supabase, handleSupabaseError } from "@/lib/database/supabase";
-
 
 interface UseProductsReturn {
   products: Product[];
@@ -16,21 +20,16 @@ interface UseProductsReturn {
   setSelectedCategory: (category: string) => void;
   getProductByCode: (code: string) => Product | null;
   refreshProducts: () => void;
-  stats: {
-    total: number;
-    categories: number;
-    margeGlobaleMoyenne: number;
-    prixMoyen: number;
-  };
+  stats: ProductStats;
 }
 
 /**
- * Hook produits MIGRÉ vers Supabase
- * Remplace complètement ProductStorage + simplifiedProducts
+ * Hook produits UNIFIÉ avec types standardisés
+ * Source unique pour tous les produits Supabase
  */
 export function useProducts(): UseProductsReturn {
   const [products, setProducts] = useState<Product[]>([]);
-  const [allProducts, setAllProducts] = useState<Product[]>([]); // Cache complet
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -55,17 +54,10 @@ export function useProducts(): UseProductsReturn {
         handleSupabaseError(queryError);
       }
 
-      // Transformer pour compatibilité interface existante
-      const transformedProducts: Product[] = (data || []).map((p : any) => ({
-        code: p.code,
-        designation: p.designation,
-        prixAchat: Number(p.prix_achat),
-        prixVente: Number(p.prix_vente),
-        tva: Number(p.tva || 20),
-        colissage: p.colissage || 1,
-        categorie: p.categories?.nom || 'Autre',
-        unite: p.designation.toLowerCase().includes('bte') ? 'boîte' : 'pièce'
-      }));
+      // Transformer avec la fonction unifiée
+      const transformedProducts: Product[] = (data || []).map((p: any) => 
+        transformProductFromDB(p, p.categories?.nom || 'Incontinence')
+      );
 
       setAllProducts(transformedProducts);
       
@@ -110,8 +102,8 @@ export function useProducts(): UseProductsReturn {
     return allProducts.find(p => p.code === code) || null;
   }, [allProducts]);
 
-  // Calcul des statistiques
-  const stats = {
+  // Calcul des statistiques avec types unifiés
+  const stats: ProductStats = {
     total: allProducts.length,
     categories: categories.length,
     margeGlobaleMoyenne: allProducts.length > 0 

@@ -1,7 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Client } from "@/types";
+import { 
+  Client, 
+  ClientCreateInput,
+  transformClientFromDB 
+} from "@/types";
 import { supabase, handleSupabaseError } from "@/lib/database/supabase";
 
 interface UseClientsReturn {
@@ -10,15 +14,15 @@ interface UseClientsReturn {
   error: string | null;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  addClient: (client: Omit<Client, "id" | "createdAt">) => Promise<Client>;
-  updateClient: (id: string, updates: Partial<Client>) => Promise<Client | null>;
+  addClient: (client: ClientCreateInput) => Promise<Client>;
+  updateClient: (id: string, updates: Partial<ClientCreateInput>) => Promise<Client | null>;
   deleteClient: (id: string) => Promise<boolean>;
   refreshClients: () => void;
 }
 
 /**
- * Hook clients MIGRÉ vers Supabase
- * Remplace complètement ClientStorage
+ * Hook clients UNIFIÉ avec types standardisés
+ * Source unique pour tous les clients Supabase
  */
 export function useClients(): UseClientsReturn {
   const [clients, setClients] = useState<Client[]>([]);
@@ -49,16 +53,8 @@ export function useClients(): UseClientsReturn {
         handleSupabaseError(queryError);
       }
 
-      // Transformer pour compatibilité avec l'interface existante
-      const transformedClients: Client[] = (data || []).map((c : any )=> ({
-        id: c.id,
-        nom: c.nom,
-        adresse: c.adresse,
-        telephone: c.telephone,
-        email: c.email,
-        siret: c.siret,
-        createdAt: new Date(c.created_at || Date.now())
-      }));
+      // Transformer avec la fonction unifiée
+      const transformedClients: Client[] = (data || []).map(transformClientFromDB);
 
       setClients(transformedClients);
       
@@ -72,7 +68,7 @@ export function useClients(): UseClientsReturn {
   }, [searchQuery]);
 
   // Ajouter un client
-  const addClient = useCallback(async (clientData: Omit<Client, "id" | "createdAt">): Promise<Client> => {
+  const addClient = useCallback(async (clientData: ClientCreateInput): Promise<Client> => {
     try {
       setError(null);
       
@@ -92,15 +88,8 @@ export function useClients(): UseClientsReturn {
         handleSupabaseError(error);
       }
 
-      const newClient: Client = {
-        id: data.id,
-        nom: data.nom,
-        adresse: data.adresse,
-        telephone: data.telephone,
-        email: data.email,
-        siret: data.siret,
-        createdAt: new Date(data.created_at)
-      };
+      // Transformer avec la fonction unifiée
+      const newClient = transformClientFromDB(data);
 
       // Ajouter à la liste locale immédiatement
       setClients(prev => [newClient, ...prev]);
@@ -116,7 +105,7 @@ export function useClients(): UseClientsReturn {
   }, []);
 
   // Mettre à jour un client
-  const updateClient = useCallback(async (id: string, updates: Partial<Client>): Promise<Client | null> => {
+  const updateClient = useCallback(async (id: string, updates: Partial<ClientCreateInput>): Promise<Client | null> => {
     try {
       setError(null);
 
@@ -138,15 +127,8 @@ export function useClients(): UseClientsReturn {
         handleSupabaseError(error);
       }
 
-      const updatedClient: Client = {
-        id: data.id,
-        nom: data.nom,
-        adresse: data.adresse,
-        telephone: data.telephone,
-        email: data.email,
-        siret: data.siret,
-        createdAt: new Date(data.created_at)
-      };
+      // Transformer avec la fonction unifiée
+      const updatedClient = transformClientFromDB(data);
 
       // Mettre à jour la liste locale
       setClients(prev => prev.map(c => c.id === id ? updatedClient : c));

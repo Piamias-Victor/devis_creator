@@ -1,5 +1,11 @@
 import { supabase, handleSupabaseError } from "@/lib/database/supabase";
-import { Client, DevisLine, Devis } from "@/types";
+import { 
+  Client, 
+  DevisLine, 
+  Devis,
+  DevisStatus,
+  DevisCalculations 
+} from "@/types";
 
 export interface DevisCreateData {
   numero: string;
@@ -15,9 +21,19 @@ export interface DevisCreateData {
   notes?: string;
 }
 
+export interface DevisStatsReturn {
+  total: number;
+  brouillons: number;
+  envoyes: number;
+  acceptes: number;
+  refuses: number;
+  chiffreAffaireMensuel: number;
+  margeGlobaleMoyenne: number;
+}
+
 /**
  * Repository pour gestion devis en Supabase
- * CRUD complet avec gestion des lignes
+ * TYPES UNIFIÉS - Utilise les types centralisés
  */
 export class DevisRepository {
 
@@ -184,8 +200,8 @@ export class DevisRepository {
 
       if (lignesError) handleSupabaseError(lignesError);
 
-      // 3. Transformer pour l'interface
-      const lignes: DevisLine[] = (lignesData || []).map((ligne : any) => ({
+      // 3. Transformer pour l'interface avec types unifiés
+      const lignes: DevisLine[] = (lignesData || []).map((ligne: any) => ({
         id: ligne.id,
         productCode: ligne.produits?.code || '',
         designation: ligne.produits?.designation || '',
@@ -203,7 +219,7 @@ export class DevisRepository {
         margePourcent: Number(ligne.marge_pourcent)
       }));
 
-      const devis: any = {
+      const devis: Devis = {
         id: devisData.id,
         numero: devisData.numero,
         date: new Date(devisData.date_creation),
@@ -211,7 +227,7 @@ export class DevisRepository {
         clientId: devisData.client_id,
         clientNom: devisData.clients?.nom,
         lignes,
-        status: devisData.status as any,
+        status: devisData.status as DevisStatus,
         totalHT: Number(devisData.total_ht),
         totalTTC: Number(devisData.total_ttc),
         margeGlobale: Number(devisData.marge_globale_pourcent),
@@ -229,6 +245,201 @@ export class DevisRepository {
   }
 
   /**
+   * Récupérer tous les devis avec informations client
+   */
+  static async getAllDevis(): Promise<Devis[]> {
+    try {
+      const { data, error } = await supabase
+        .from('devis')
+        .select(`
+          *,
+          clients(nom)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) handleSupabaseError(error);
+
+      // Transformer pour l'interface avec types unifiés
+      const devisList: Devis[] = (data || []).map((d: any) => ({
+        id: d.id,
+        numero: d.numero,
+        date: new Date(d.date_creation),
+        dateValidite: new Date(d.date_validite),
+        clientId: d.client_id,
+        clientNom: d.clients?.nom || 'Client inconnu',
+        lignes: [], // Pas besoin des lignes pour la liste
+        status: d.status as DevisStatus,
+        totalHT: Number(d.total_ht || 0),
+        totalTTC: Number(d.total_ttc || 0),
+        margeGlobale: Number(d.marge_globale_pourcent || 0),
+        notes: d.notes,
+        createdAt: new Date(d.created_at),
+        updatedAt: new Date(d.updated_at)
+      }));
+
+      return devisList;
+
+    } catch (error) {
+      console.error('❌ Erreur récupération devis:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Rechercher devis par terme
+   */
+  static async searchDevis(query: string): Promise<Devis[]> {
+    try {
+      const { data, error } = await supabase
+        .from('devis')
+        .select(`
+          *,
+          clients(nom)
+        `)
+        .or(`numero.ilike.%${query}%,clients.nom.ilike.%${query}%`)
+        .order('created_at', { ascending: false });
+
+      if (error) handleSupabaseError(error);
+
+      return (data || []).map((d: any) => ({
+        id: d.id,
+        numero: d.numero,
+        date: new Date(d.date_creation),
+        dateValidite: new Date(d.date_validite),
+        clientId: d.client_id,
+        clientNom: d.clients?.nom || 'Client inconnu',
+        lignes: [],
+        status: d.status as DevisStatus,
+        totalHT: Number(d.total_ht || 0),
+        totalTTC: Number(d.total_ttc || 0),
+        margeGlobale: Number(d.marge_globale_pourcent || 0),
+        notes: d.notes,
+        createdAt: new Date(d.created_at),
+        updatedAt: new Date(d.updated_at)
+      }));
+
+    } catch (error) {
+      console.error('❌ Erreur recherche devis:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Supprimer un devis
+   */
+  static async deleteDevis(devisId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('devis')
+        .delete()
+        .eq('id', devisId);
+
+      if (error) handleSupabaseError(error);
+      
+      console.log('✅ Devis supprimé de Supabase:', devisId);
+      return true;
+
+    } catch (error) {
+      console.error('❌ Erreur suppression devis:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Statistiques des devis depuis Supabase
+   */
+  static async getDevisStats(): Promise<DevisStatsReturn> {
+    try {
+      const { data, error } = await supabase
+        .from('devis')
+        .select('status, total_ttc, marge_globale_pourcent, date_creation');
+
+      if (error) handleSupabaseError(error);
+
+      const allDevis = data || [];
+      const currentMonth = new Date().getMonth();
+      const currentYear = new Date().getFullYear();
+
+      const devisDuMois = allDevis.filter((d: any) => {
+        const devisDate = new Date(d.date_creation);
+        return devisDate.getMonth() === currentMonth && devisDate.getFullYear() === currentYear;
+      });
+
+      return {
+        total: allDevis.length,
+        brouillons: allDevis.filter((d: any) => d.status === 'brouillon').length,
+        envoyes: allDevis.filter((d: any) => d.status === 'envoye').length,
+        acceptes: allDevis.filter((d: any) => d.status === 'accepte').length,
+        refuses: allDevis.filter((d: any) => d.status === 'refuse').length,
+        chiffreAffaireMensuel: devisDuMois
+          .filter((d: any) => d.status === 'accepte')
+          .reduce((sum: any, d: any) => sum + Number(d.total_ttc || 0), 0),
+        margeGlobaleMoyenne: allDevis.length > 0 
+          ? allDevis.reduce((sum: any, d: any) => sum + Number(d.marge_globale_pourcent || 0), 0) / allDevis.length 
+          : 0
+      };
+
+    } catch (error) {
+      console.error('❌ Erreur stats devis:', error);
+      return {
+        total: 0,
+        brouillons: 0,
+        envoyes: 0,
+        acceptes: 0,
+        refuses: 0,
+        chiffreAffaireMensuel: 0,
+        margeGlobaleMoyenne: 0
+      };
+    }
+  }
+
+  /**
+   * Dupliquer un devis existant
+   */
+  static async duplicateDevis(devisId: string): Promise<string | null> {
+    try {
+      console.log('🔄 Duplication devis:', devisId);
+      
+      // 1. Récupérer le devis original avec ses lignes
+      const originalDevis = await this.getDevisById(devisId);
+      
+      if (!originalDevis) {
+        throw new Error('Devis original introuvable');
+      }
+
+      console.log('✅ Devis original récupéré:', originalDevis.numero);
+
+      // 2. Préparer les données pour la duplication
+      const now = new Date();
+      const nouveauNumero = this.generateNumeroDevis();
+      
+      const duplicatedDevisData: DevisCreateData = {
+        numero: nouveauNumero,
+        client_id: originalDevis.clientId,
+        date_creation: now.toISOString().split('T')[0],
+        date_validite: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // +30 jours
+        lignes: originalDevis.lignes, // Lignes identiques
+        total_ht: originalDevis.totalHT,
+        total_tva: originalDevis.totalTTC - originalDevis.totalHT,
+        total_ttc: originalDevis.totalTTC,
+        marge_globale_euros: 0, // Recalculé automatiquement
+        marge_globale_pourcent: originalDevis.margeGlobale,
+        notes: `Copie de ${originalDevis.numero} - ${originalDevis.notes || ''}`.trim()
+      };
+
+      // 3. Créer le nouveau devis
+      const newDevisId = await this.createDevis(duplicatedDevisData);
+      
+      console.log('✅ Devis dupliqué:', nouveauNumero, 'ID:', newDevisId);
+      return newDevisId;
+
+    } catch (error) {
+      console.error('❌ Erreur duplication devis:', error);
+      return null;
+    }
+  }
+
+  /**
    * Générer un numéro de devis unique
    */
   static generateNumeroDevis(): string {
@@ -240,207 +451,4 @@ export class DevisRepository {
     
     return `DEV${year}${month}${day}-${sequence}`;
   }
-
-  /**
- * Récupérer tous les devis avec informations client
- */
-static async getAllDevis(): Promise<Devis[]> {
-  try {
-    const { data, error } = await supabase
-      .from('devis')
-      .select(`
-        *,
-        clients(nom)
-      `)
-      .order('created_at', { ascending: false });
-
-    if (error) handleSupabaseError(error);
-
-    // Transformer pour l'interface
-    const devisList: Devis[] = (data || []).map((d : any) => ({
-      id: d.id,
-      numero: d.numero,
-      date: new Date(d.date_creation),
-      dateValidite: new Date(d.date_validite),
-      clientId: d.client_id,
-      clientNom: d.clients?.nom || 'Client inconnu',
-      lignes: [], // Pas besoin des lignes pour la liste
-      status: d.status as any,
-      totalHT: Number(d.total_ht || 0),
-      totalTTC: Number(d.total_ttc || 0),
-      margeGlobale: Number(d.marge_globale_pourcent || 0),
-      notes: d.notes,
-      createdAt: new Date(d.created_at),
-      updatedAt: new Date(d.updated_at)
-    }));
-
-    return devisList;
-
-  } catch (error) {
-    console.error('❌ Erreur récupération devis:', error);
-    return [];
-  }
 }
-
-/**
- * Rechercher devis par terme
- */
-static async searchDevis(query: string): Promise<Devis[]> {
-  try {
-    const { data, error } = await supabase
-      .from('devis')
-      .select(`
-        *,
-        clients(nom)
-      `)
-      .or(`numero.ilike.%${query}%,clients.nom.ilike.%${query}%`)
-      .order('created_at', { ascending: false });
-
-    if (error) handleSupabaseError(error);
-
-    return (data || []).map((d : any) => ({
-      id: d.id,
-      numero: d.numero,
-      date: new Date(d.date_creation),
-      dateValidite: new Date(d.date_validite),
-      clientId: d.client_id,
-      clientNom: d.clients?.nom || 'Client inconnu',
-      lignes: [],
-      status: d.status as any,
-      totalHT: Number(d.total_ht || 0),
-      totalTTC: Number(d.total_ttc || 0),
-      margeGlobale: Number(d.marge_globale_pourcent || 0),
-      notes: d.notes,
-      createdAt: new Date(d.created_at),
-      updatedAt: new Date(d.updated_at)
-    }));
-
-  } catch (error) {
-    console.error('❌ Erreur recherche devis:', error);
-    return [];
-  }
-}
-
-/**
- * Supprimer un devis
- */
-static async deleteDevis(devisId: string): Promise<boolean> {
-  try {
-    const { error } = await supabase
-      .from('devis')
-      .delete()
-      .eq('id', devisId);
-
-    if (error) handleSupabaseError(error);
-    
-    console.log('✅ Devis supprimé de Supabase:', devisId);
-    return true;
-
-  } catch (error) {
-    console.error('❌ Erreur suppression devis:', error);
-    return false;
-  }
-}
-
-/**
- * Statistiques des devis depuis Supabase
- */
-static async getDevisStats(): Promise<{
-  total: number;
-  brouillons: number;
-  envoyes: number;
-  acceptes: number;
-  refuses: number;
-  chiffreAffaireMensuel: number;
-  margeGlobaleMoyenne: number;
-}> {
-  try {
-    const { data, error } = await supabase
-      .from('devis')
-      .select('status, total_ttc, marge_globale_pourcent, date_creation');
-
-    if (error) handleSupabaseError(error);
-
-    const allDevis = data || [];
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
-
-    const devisDuMois = allDevis.filter((d : any) => {
-      const devisDate = new Date(d.date_creation);
-      return devisDate.getMonth() === currentMonth && devisDate.getFullYear() === currentYear;
-    });
-
-    return {
-      total: allDevis.length,
-      brouillons: allDevis.filter((d : any) => d.status === 'brouillon').length,
-      envoyes: allDevis.filter((d : any) => d.status === 'envoye').length,
-      acceptes: allDevis.filter((d : any) => d.status === 'accepte').length,
-      refuses: allDevis.filter((d : any) => d.status === 'refuse').length,
-      chiffreAffaireMensuel: devisDuMois
-        .filter((d : any) => d.status === 'accepte')
-        .reduce((sum : any, d : any) => sum + Number(d.total_ttc || 0), 0),
-      margeGlobaleMoyenne: allDevis.length > 0 
-        ? allDevis.reduce((sum : any, d: any) => sum + Number(d.marge_globale_pourcent || 0), 0) / allDevis.length 
-        : 0
-    };
-
-  } catch (error) {
-    console.error('❌ Erreur stats devis:', error);
-    return {
-      total: 0,
-      brouillons: 0,
-      envoyes: 0,
-      acceptes: 0,
-      refuses: 0,
-      chiffreAffaireMensuel: 0,
-      margeGlobaleMoyenne: 0
-    };
-  }
-}
-/**
- * Dupliquer un devis existant
- */
-static async duplicateDevis(devisId: string): Promise<string | null> {
-  try {
-    console.log('🔄 Duplication devis:', devisId);
-    
-    // 1. Récupérer le devis original avec ses lignes
-    const originalDevis = await this.getDevisById(devisId);
-    
-    if (!originalDevis) {
-      throw new Error('Devis original introuvable');
-    }
-
-    console.log('✅ Devis original récupéré:', originalDevis.numero);
-
-    // 2. Préparer les données pour la duplication
-    const now = new Date();
-    const nouveauNumero = this.generateNumeroDevis();
-    
-    const duplicatedDevisData = {
-      numero: nouveauNumero,
-      client_id: originalDevis.clientId,
-      date_creation: now.toISOString().split('T')[0],
-      date_validite: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // +30 jours
-      lignes: originalDevis.lignes, // Lignes identiques
-      total_ht: originalDevis.totalHT,
-      total_tva: originalDevis.calculations?.totalTVA || (originalDevis.totalTTC - originalDevis.totalHT),
-      total_ttc: originalDevis.totalTTC,
-      marge_globale_euros: originalDevis.calculations?.margeGlobaleEuros || 0,
-      marge_globale_pourcent: originalDevis.margeGlobale,
-      notes: `Copie de ${originalDevis.numero} - ${originalDevis.notes || ''}`.trim()
-    };
-
-    // 3. Créer le nouveau devis
-    const newDevisId = await this.createDevis(duplicatedDevisData);
-    
-    console.log('✅ Devis dupliqué:', nouveauNumero, 'ID:', newDevisId);
-    return newDevisId;
-
-  } catch (error) {
-    console.error('❌ Erreur duplication devis:', error);
-    return null;
-  }
-}
-}
-
