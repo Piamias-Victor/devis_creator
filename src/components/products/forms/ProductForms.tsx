@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils/cn";
 import { ProductPreview } from "./ProductPreview";
 import { ProductFormFields } from "./ProductFormsFields";
+import { Copy } from "lucide-react";
 
 // ✅ Interface exacte pour Supabase
 interface ProductFormData {
@@ -20,16 +21,19 @@ interface ProductFormProps {
   onSubmit: (data: ProductFormData) => void;
   onCancel: () => void;
   loading?: boolean;
+  isDuplicating?: boolean; // ✅ NOUVELLE PROP
 }
 
 /**
- * Formulaire produit avec types strictement corrigés
+ * Formulaire produit AVEC support duplication
+ * Pré-remplissage intelligent et validation adaptée
  */
 export function ProductForm({
   product,
   onSubmit,
   onCancel,
-  loading
+  loading,
+  isDuplicating = false // ✅ NOUVELLE PROP
 }: ProductFormProps) {
   const [formData, setFormData] = useState<ProductFormData>({
     code: "",
@@ -81,6 +85,11 @@ export function ProductForm({
     if (isNaN(tva) || tva < 0 || tva > 100) newErrors.push("La TVA doit être entre 0 et 100%");
     if (!colissage || colissage < 1) newErrors.push("Le colissage doit être d'au moins 1");
 
+    // ✅ Validation spéciale en mode duplication (éviter conflit code)
+    if (isDuplicating && formData.code.endsWith('_COPY')) {
+      newErrors.push("⚠️ Modifiez le code produit pour éviter les conflits (retirez '_COPY')");
+    }
+
     setErrors(newErrors);
     return newErrors.length === 0;
   };
@@ -129,12 +138,39 @@ export function ProductForm({
     }
   };
 
+  // ✅ Fonction pour nettoyer le code en mode duplication
+  const handleCleanDuplicatedCode = () => {
+    if (isDuplicating && formData.code.includes('_COPY')) {
+      const cleanCode = formData.code.replace('_COPY', '_DUP_' + Date.now().toString().slice(-4));
+      handleChange('code', cleanCode);
+    }
+  };
+
+  // ✅ Fonction pour nettoyer la désignation
+  const handleCleanDuplicatedDesignation = () => {
+    if (isDuplicating && formData.designation.startsWith('COPIE - ')) {
+      const cleanDesignation = formData.designation.replace('COPIE - ', '');
+      handleChange('designation', `${cleanDesignation} - Variante`);
+    }
+  };
+
+  // ✅ Déterminer le texte du bouton selon le mode
+  const getSubmitButtonText = () => {
+    if (loading) return "Enregistrement...";
+    if (isDuplicating) return "Créer la copie";
+    if (product) return "Modifier";
+    return "Créer le produit";
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* ✅ Bannière informative en mode duplication */}
+
       <ProductFormFields
         formData={formData}
         errors={errors}
-        onChange={handleChange}  // ✅ Types maintenant compatibles
+        onChange={handleChange}
+        isDuplicating={isDuplicating} // ✅ Passer le flag aux champs
       />
 
       <ProductPreview 
@@ -165,12 +201,13 @@ export function ProductForm({
           disabled={loading}
           className={cn(
             "flex-1 py-3 px-6 rounded-lg font-medium transition-all duration-200",
-            "bg-indigo-600 hover:bg-indigo-700 text-white",
-            "shadow-lg shadow-indigo-600/25 hover:shadow-xl hover:shadow-indigo-600/30",
-            "disabled:opacity-50 disabled:cursor-not-allowed"
+            isDuplicating 
+              ? "bg-green-600 hover:bg-green-700 shadow-green-600/25 hover:shadow-xl hover:shadow-green-600/30"
+              : "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/25 hover:shadow-xl hover:shadow-indigo-600/30",
+            "text-white disabled:opacity-50 disabled:cursor-not-allowed"
           )}
         >
-          {loading ? "Enregistrement..." : product ? "Modifier" : "Créer le produit"}
+          {getSubmitButtonText()}
         </button>
         
         <button
