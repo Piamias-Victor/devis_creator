@@ -1,111 +1,133 @@
-import type { AuthOptions, User } from "next-auth";
-import type { JWT } from "next-auth/jwt";
+import type { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { supabase } from "@/lib/database/supabase";
 
 /**
- * Configuration NextAuth CORRIGÉE v2
- * Fix des erreurs TypeScript et import
+ * VERSION INTERMÉDIAIRE - Supabase + Types simples
+ * Progression vers la version complète
  */
 
-// Types locaux pour éviter les erreurs
-interface CustomUser extends User {
-  role: string;
-}
-
-interface CustomJWT extends JWT {
-  role?: string;
-}
-
-// Base utilisateurs
-const AUTHORIZED_USERS = [
-  {
-    id: "1",
-    email: "admin@pharmacie-corte.fr",
-    password: "admin123",
-    name: "Administrateur Pharmacie",
-    role: "admin"
-  },
-  {
-    id: "2", 
-    email: "pharma@corte.fr",
-    password: "pharma123",
-    name: "Pharmacien",
-    role: "pharmacien"
-  },
-  {
-    id: "3",
-    email: "demo@demo.fr", 
-    password: "demo123",
-    name: "Compte Démonstration",
-    role: "demo"
-  }
-];
+console.log("🚀 AUTH CONFIG AVEC SUPABASE CHARGÉ");
 
 export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
       name: "credentials",
       credentials: {
-        email: { 
-          label: "Email", 
-          type: "email",
-          placeholder: "demo@demo.fr"
-        },
-        password: { 
-          label: "Mot de passe", 
-          type: "password",
-          placeholder: "demo123"
-        },
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
       },
-      
-      async authorize(credentials): Promise<CustomUser | null> {
-        console.log("🔍 Tentative de connexion:", credentials?.email);
+      async authorize(credentials) {
+        console.log("🔥 AUTHORIZE APPELÉ avec Supabase");
+        console.log("📧 Email:", credentials?.email);
         
         if (!credentials?.email || !credentials?.password) {
           console.log("❌ Credentials manquants");
           return null;
         }
 
-        // Recherche utilisateur
-        const user = AUTHORIZED_USERS.find(
-          u => u.email === credentials.email && u.password === credentials.password
-        );
+        try {
+          // ✅ TEST CONNEXION SUPABASE
+          console.log("🗄️ Test connexion Supabase...");
+          const testQuery = await supabase.from('users').select('count').limit(1);
+          console.log("🗄️ Test résultat:", testQuery);
 
-        if (user) {
-          console.log("✅ Utilisateur trouvé:", user.email);
-          return {
+          // ✅ RECHERCHE UTILISATEUR
+          console.log("👤 Recherche utilisateur:", credentials.email);
+          const { data: user, error } = await supabase
+            .from('users')
+            .select('id, email, nom, prenom, role, actif')
+            .eq('email', credentials.email)
+            .eq('actif', true)
+            .single();
+
+          console.log("🔍 Résultat requête:", { user, error });
+
+          if (error) {
+            console.log("❌ Erreur Supabase:", error.message);
+            return null;
+          }
+
+          if (!user) {
+            console.log("❌ Utilisateur non trouvé");
+            return null;
+          }
+
+          console.log("✅ Utilisateur trouvé:", user.email, user.nom);
+
+          // ✅ VÉRIFICATION MOT DE PASSE
+          const validPasswords: Record<string, string> = {
+            'admin@pharmacie-corte.fr': 'admin123',
+            'pharma@corte.fr': 'pharma123', 
+            'demo@demo.fr': 'demo123',
+            'assistant@corte.fr': 'assistant123'
+          };
+
+          if (validPasswords[credentials.email] !== credentials.password) {
+            console.log("❌ Mot de passe incorrect");
+            console.log("🔑 Attendu:", validPasswords[credentials.email]);
+            console.log("🔑 Reçu:", credentials.password);
+            return null;
+          }
+
+          console.log("✅ Authentification réussie!");
+          
+          // ✅ RETOUR UTILISATEUR SIMPLIFIÉ
+          const authenticatedUser = {
             id: user.id,
             email: user.email,
-            name: user.name,
+            name: `${user.prenom || ''} ${user.nom}`.trim(),
+            // ✅ Propriétés custom SIMPLES (pas d'interface complexe)
             role: user.role,
+            userId: user.id,
+            nom: user.nom,
+            prenom: user.prenom
           };
-        }
 
-        console.log("❌ Utilisateur non trouvé");
-        return null;
+          console.log("🎉 Retour utilisateur:", authenticatedUser);
+          return authenticatedUser;
+          
+        } catch (error) {
+          console.error("❌ Erreur authentification:", error);
+          return null;
+        }
       },
     }),
   ],
   
   pages: {
     signIn: "/auth/login",
-    error: "/auth/login",
   },
   
   callbacks: {
-    async jwt({ token, user }: { token: CustomJWT; user?: CustomUser }) {
+    async jwt({ token, user }) {
+      console.log("🔄 JWT Callback:", { token, user });
+      
+      // ✅ ENRICHIR TOKEN si utilisateur présent
       if (user) {
-        token.role = user.role;
-        token.id = user.id;
+        token.role = (user as any).role;
+        token.userId = (user as any).userId;
+        token.nom = (user as any).nom;
+        token.prenom = (user as any).prenom;
+        console.log("✅ Token enrichi:", token);
       }
+      
       return token;
     },
     
-    async session({ session, token }: { session: any; token: CustomJWT }) {
+    async session({ session, token }) {
+      console.log("🔄 Session Callback:", { session, token });
+      
+      // ✅ ENRICHIR SESSION
       if (token && session.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string;
+        (session.user as any).id = token.userId;
+        (session.user as any).userId = token.userId;
+        (session.user as any).role = token.role;
+        (session.user as any).nom = token.nom;
+        (session.user as any).prenom = token.prenom;
+        console.log("✅ Session enrichie:", session);
       }
+      
       return session;
     },
   },
@@ -115,6 +137,6 @@ export const authOptions: AuthOptions = {
     maxAge: 24 * 60 * 60, // 24 heures
   },
   
-  debug: process.env.NODE_ENV === "development",
-  secret: process.env.NEXTAUTH_SECRET,
+  debug: true,
+  secret: process.env.NEXTAUTH_SECRET || "fallback-secret",
 };

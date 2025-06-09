@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { DevisLine, Product, DevisCalculations, Client } from "@/types";
 import { calculateLineAmounts, calculateDevisTotal } from "@/lib/utils/calculUtils";
 import { DevisRepository } from "@/lib/repositories/devisRepository";
+import { useAuth } from "./useAuth"; // ✅ AJOUTÉ pour traçabilité
 
 interface UseDevisReturn {
   lignes: DevisLine[];
@@ -25,7 +26,8 @@ interface UseDevisReturn {
 }
 
 /**
- * Hook devis CORRIGÉ avec chargement automatique
+ * Hook devis AVEC AUTHENTIFICATION UTILISATEUR
+ * Traçabilité automatique des créateurs/modificateurs
  */
 export function useDevis(initialDevisId?: string): UseDevisReturn {
   const [lignes, setLignes] = useState<DevisLine[]>([]);
@@ -34,6 +36,9 @@ export function useDevis(initialDevisId?: string): UseDevisReturn {
   const [error, setError] = useState<string | null>(null);
   const [devisId, setDevisId] = useState<string | null>(initialDevisId || null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
+  // ✅ HOOK AUTHENTIFICATION pour traçabilité
+  const { currentUser } = useAuth();
 
   // Générer un ID unique pour une ligne
   const generateLineId = useCallback((): string => {
@@ -144,7 +149,7 @@ export function useDevis(initialDevisId?: string): UseDevisReturn {
     }
   }, [lignes.length]);
 
-  // Sauvegarder le devis en Supabase
+  // ✅ SAUVEGARDER DEVIS AVEC AUTHENTIFICATION
   const saveDevis = useCallback(async (
     client: Client,
     dateValidite: Date,
@@ -158,11 +163,16 @@ export function useDevis(initialDevisId?: string): UseDevisReturn {
         throw new Error("Impossible de sauvegarder un devis vide");
       }
 
+      // ✅ VÉRIFIER QUE L'UTILISATEUR EST CONNECTÉ
+      if (!currentUser) {
+        throw new Error("Vous devez être connecté pour sauvegarder un devis");
+      }
+
       const calculations = calculateDevisTotal(lignes);
       const now = new Date();
 
       const devisData = {
-        numero: devisId ? undefined : DevisRepository.generateNumeroDevis(), // Pas de nouveau numéro si modification
+        numero: devisId ? undefined : DevisRepository.generateNumeroDevis(),
         client_id: client.id,
         date_creation: now.toISOString().split('T')[0],
         date_validite: dateValidite.toISOString().split('T')[0],
@@ -172,21 +182,22 @@ export function useDevis(initialDevisId?: string): UseDevisReturn {
         total_ttc: calculations.totalTTC,
         marge_globale_euros: calculations.margeGlobaleEuros,
         marge_globale_pourcent: calculations.margeGlobalePourcent,
-        notes
+        notes,
+        created_by: currentUser.id // ✅ TRAÇABILITÉ UTILISATEUR
       };
 
       let savedDevisId: string;
 
       if (devisId) {
-        // Mise à jour
-        await DevisRepository.updateDevis(devisId, devisData);
+        // ✅ Mise à jour avec utilisateur modificateur
+        await DevisRepository.updateDevis(devisId, devisData, currentUser.id);
         savedDevisId = devisId;
-        console.log('✅ Devis mis à jour en Supabase:', devisId);
+        console.log('✅ Devis mis à jour par:', currentUser.fullName);
       } else {
-        // Création
+        // ✅ Création avec utilisateur créateur
         savedDevisId = await DevisRepository.createDevis(devisData as any);
         setDevisId(savedDevisId);
-        console.log('✅ Nouveau devis créé en Supabase:', savedDevisId);
+        console.log('✅ Nouveau devis créé par:', currentUser.fullName);
       }
 
       setLastSaved(new Date());
@@ -199,7 +210,7 @@ export function useDevis(initialDevisId?: string): UseDevisReturn {
     } finally {
       setSaving(false);
     }
-  }, [lignes, devisId]);
+  }, [lignes, devisId, currentUser]); // ✅ currentUser dans dépendances
 
   // Réinitialiser le devis
   const resetDevis = useCallback(() => {

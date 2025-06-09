@@ -16,6 +16,26 @@ export interface Client {
   createdAt: Date;
 }
 
+export interface User {
+  id: string;
+  email: string;
+  nom: string;
+  prenom?: string;
+  role: 'admin' | 'pharmacien' | 'assistant';
+  actif: boolean;
+  telephone?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface UserCreateInput {
+  email: string;
+  nom: string;
+  prenom?: string;
+  role: 'admin' | 'pharmacien' | 'assistant';
+  telephone?: string;
+}
+
 export interface ClientCreateInput {
   nom: string;
   adresse: string;
@@ -89,15 +109,96 @@ export interface Devis {
   date: Date;
   dateValidite: Date;
   clientId: string;
-  clientNom?: string;       // Cache pour affichage
+  clientNom?: string;
   lignes: DevisLine[];
   status: DevisStatus;
   totalHT: number;
   totalTTC: number;
-  margeGlobale: number;     // Pourcentage
+  margeGlobale: number;
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
+  
+  // ✅ NOUVELLES PROPRIÉTÉS TRAÇABILITÉ
+  createdBy?: string;           // ID utilisateur créateur
+  createdByName?: string;       // Nom complet créateur
+  updatedBy?: string;           // ID dernier modificateur
+  updatedByName?: string;       // Nom complet modificateur
+}
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  nom: string;
+  prenom?: string;
+  role: 'admin' | 'pharmacien' | 'assistant';
+  fullName: string;
+}
+
+export function transformUserFromDB(userDB: any): User {
+  return {
+    id: userDB.id,
+    email: userDB.email,
+    nom: userDB.nom,
+    prenom: userDB.prenom,
+    role: userDB.role,
+    actif: userDB.actif,
+    telephone: userDB.telephone,
+    createdAt: new Date(userDB.created_at),
+    updatedAt: new Date(userDB.updated_at)
+  };
+}
+
+export function getUserFullName(user: User | AuthUser): string {
+  return `${user.prenom || ''} ${user.nom}`.trim();
+}
+
+/**
+ * Vérifie les permissions selon le rôle
+ */
+export function getUserPermissions(role: string): AuthPermissions {
+  switch (role) {
+    case 'admin':
+      return {
+        canCreateDevis: true,
+        canEditProducts: true,
+        canManageUsers: true,
+        canDeleteDevis: true,
+        canExportData: true
+      };
+    case 'pharmacien':
+      return {
+        canCreateDevis: true,
+        canEditProducts: true,
+        canManageUsers: false,
+        canDeleteDevis: true,
+        canExportData: true
+      };
+    case 'assistant':
+      return {
+        canCreateDevis: true,
+        canEditProducts: false,
+        canManageUsers: false,
+        canDeleteDevis: false,
+        canExportData: false
+      };
+    default:
+      return {
+        canCreateDevis: false,
+        canEditProducts: false,
+        canManageUsers: false,
+        canDeleteDevis: false,
+        canExportData: false
+      };
+  }
+}
+
+export interface AuthPermissions {
+  canCreateDevis: boolean;
+  canEditProducts: boolean;
+  canManageUsers: boolean;
+  canDeleteDevis: boolean;
+  canExportData: boolean;
 }
 
 export type DevisStatus = 'brouillon' | 'envoye' | 'accepte' | 'refuse' | 'expire';

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Devis } from "@/types";
 import { DevisRepository } from "@/lib/repositories/devisRepository";
+import { useAuth } from "./useAuth"; // ✅ AJOUTÉ pour traçabilité utilisateur
 
 interface UseDevisListReturn {
   devis: Devis[];
@@ -10,7 +11,7 @@ interface UseDevisListReturn {
   error: string | null;
   searchQuery: string;
   statusFilter: string;
-  duplicateDevis : any;
+  duplicateDevis: (id: string) => Promise<string | null>;
   stats: {
     total: number;
     brouillons: number;
@@ -27,9 +28,13 @@ interface UseDevisListReturn {
 }
 
 /**
- * Hook pour la gestion de la liste des devis avec Supabase
+ * Hook pour la gestion de la liste des devis AVEC AUTHENTIFICATION
+ * Traçabilité automatique des duplications par utilisateur connecté
  */
 export function useDevisList(): UseDevisListReturn {
+  // ✅ HOOK AUTHENTIFICATION pour traçabilité
+  const { currentUser } = useAuth();
+  
   const [allDevis, setAllDevis] = useState<Devis[]>([]);
   const [devis, setDevis] = useState<Devis[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,6 +116,40 @@ export function useDevisList(): UseDevisListReturn {
     }
   }, []);
 
+  // ✅ FONCTION DUPLICATION AVEC UTILISATEUR ACTUEL
+  const duplicateDevis = useCallback(async (id: string): Promise<string | null> => {
+    try {
+      setError(null);
+      
+      // ✅ VÉRIFIER QUE L'UTILISATEUR EST CONNECTÉ
+      if (!currentUser) {
+        setError('Vous devez être connecté pour dupliquer un devis');
+        console.warn('❌ Tentative duplication sans utilisateur connecté');
+        return null;
+      }
+      
+      console.log('🔄 Duplication devis par:', currentUser.fullName);
+      
+      // ✅ UTILISER LA NOUVELLE FONCTION avec utilisateur actuel
+      const newDevisId = await DevisRepository.duplicateDevisWithCurrentUser(id, currentUser.id);
+      
+      if (newDevisId) {
+        // Recharger la liste pour voir le nouveau devis
+        await loadAllDevis();
+        console.log('✅ Devis dupliqué avec succès par:', currentUser.fullName, 'ID:', newDevisId);
+      } else {
+        setError('Erreur lors de la duplication du devis');
+      }
+      
+      return newDevisId;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Erreur lors de la duplication';
+      setError(message);
+      console.error('❌ Erreur duplication:', error);
+      return null;
+    }
+  }, [currentUser, loadAllDevis]);
+
   // Charger au montage
   useEffect(() => {
     loadAllDevis();
@@ -120,25 +159,6 @@ export function useDevisList(): UseDevisListReturn {
   useEffect(() => {
     filterDevis();
   }, [filterDevis]);
-
-  const duplicateDevis = useCallback(async (id: string): Promise<string | null> => {
-  try {
-    setError(null);
-    const newDevisId = await DevisRepository.duplicateDevis(id);
-    
-    if (newDevisId) {
-      // Recharger la liste pour voir le nouveau devis
-      await loadAllDevis();
-      console.log('✅ Devis dupliqué avec succès:', newDevisId);
-    }
-    
-    return newDevisId;
-  } catch (error) {
-    setError('Erreur lors de la duplication');
-    console.error('❌ Erreur duplication:', error);
-    return null;
-  }
-}, [loadAllDevis]);
 
   return {
     devis,
@@ -150,7 +170,7 @@ export function useDevisList(): UseDevisListReturn {
     setSearchQuery,
     setStatusFilter,
     deleteDevis,
-    duplicateDevis,
+    duplicateDevis, // ✅ Fonction avec authentification
     refreshDevis: loadAllDevis
   };
 }

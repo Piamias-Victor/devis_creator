@@ -3,10 +3,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { DevisLayout } from "./layout/DevisLayout";
 import { Client, DevisLine, Product } from "@/types";
 import { generateDevisNumber, calculateValidityDate } from "@/lib/utils/devisUtils";
-import { PdfGenerator } from "@/lib/pdf/pdfGenerator";
 import { ClientModal } from "../clients/ClientModal";
 import { useDevis } from "@/lib/hooks/useDevis";
-import { useDevisSort } from "./table/useDevisSort"; // ✅ NOUVEAU IMPORT
+import { useClients } from "@/lib/hooks/useClients"; // ✅ AJOUTÉ
+import { useDevisSort } from "./table/useDevisSort";
 import { DevisRepository } from "@/lib/repositories/devisRepository";
 import { supabase } from "@/lib/database/supabase";
 
@@ -36,13 +36,16 @@ const handleSaveLineToDatabase = async (ligne: DevisLine): Promise<void> => {
 };
 
 /**
- * Composant principal de création de devis AVEC TRI INTÉGRÉ
- * Le tri est maintenant répercuté dans l'export PDF
+ * Composant principal de création de devis CORRIGÉ
+ * Élimination de la boucle infinie de chargement client
  */
 function DevisCreationCore() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const devisId = searchParams?.get('id');
+  
+  // ✅ Hook clients ajouté pour récupération automatique
+  const { clients, loading: clientsLoading } = useClients();
   
   // État du devis
   const [numeroDevis, setNumeroDevis] = useState("2025-0000-0000");
@@ -52,6 +55,7 @@ function DevisCreationCore() {
   const [saving, setSaving] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [loadingDevis, setLoadingDevis] = useState(false);
+  const [devisLoaded, setDevisLoaded] = useState(false); // ✅ GARDE anti-boucle
 
   // Modal création client
   const [showClientModal, setShowClientModal] = useState(false);
@@ -70,11 +74,71 @@ function DevisCreationCore() {
     saveDevis
   } = useDevis(devisId || undefined);
 
-  // ✅ HOOK TRI avec protection contre undefined
+  // Hook tri avec protection contre undefined
   const sortData = useDevisSort(lignes);
   const sortedLignes = sortData.sortedLignes || lignes || [];
   const sortField = sortData.sortField || 'designation';
   const sortDirection = sortData.sortDirection || 'asc';
+
+  // ✅ FONCTION CORRIGÉE avec garde anti-boucle
+  const loadDevisDetails = async (devisIdToLoad: string) => {
+    // ✅ GARDE - éviter double chargement
+    if (devisLoaded || loadingDevis) {
+      console.log('⏭️ Devis déjà chargé, skip');
+      return;
+    }
+
+    try {
+      setLoadingDevis(true);
+      console.log('🔄 Chargement détails devis:', devisIdToLoad);
+
+      const devis = await DevisRepository.getDevisById(devisIdToLoad);
+      
+      if (devis) {
+        setNumeroDevis(devis.numero);
+        setDateCreation(devis.date);
+        setDateValidite(devis.dateValidite);
+        
+        // ✅ Récupération client via hook useClients
+        if (devis.clientId && clients.length > 0) {
+          const client = clients.find(c => c.id === devis.clientId);
+          if (client) {
+            setSelectedClient(client);
+            console.log('✅ Client récupéré:', client.nom);
+          } else {
+            console.warn('⚠️ Client non trouvé dans la liste:', devis.clientId);
+          }
+        }
+        
+        setDevisLoaded(true); // ✅ MARQUER COMME CHARGÉ
+        console.log('✅ Détails devis chargés:', devis.numero);
+      }
+    } catch (error) {
+      console.error('❌ Erreur chargement détails:', error);
+    } finally {
+      setLoadingDevis(false);
+    }
+  };
+
+  // ✅ EFFET UNIFIÉ - Initialisation côté client avec garde
+  useEffect(() => {
+    setIsClient(true);
+    
+    if (devisId && !devisLoaded) {
+      console.log("📝 Mode édition - chargement devis:", devisId);
+      // ✅ Attendre que les clients soient chargés AVANT le devis
+      if (!clientsLoading && clients.length > 0) {
+        loadDevisDetails(devisId);
+      }
+    } else if (!devisId && !devisLoaded) {
+      console.log("📝 Mode création - nouveau devis");
+      setNumeroDevis(generateDevisNumber());
+      const now = new Date();
+      setDateCreation(now);
+      setDateValidite(calculateValidityDate(now));
+      setDevisLoaded(true); // ✅ Éviter re-initialisation
+    }
+  }, [devisId, clients, clientsLoading, devisLoaded]);
 
   // Fonction pour actualiser les produits depuis la DB
   const handleRefreshProducts = async (): Promise<void> => {
@@ -149,54 +213,8 @@ function DevisCreationCore() {
     }
   };
 
-  // Charger devis complet pour récupérer numéro + client
-  const loadDevisDetails = async (devisIdToLoad: string) => {
-    try {
-      setLoadingDevis(true);
-      console.log('🔄 Chargement détails devis:', devisIdToLoad);
-
-      const devis = await DevisRepository.getDevisById(devisIdToLoad);
-      
-      if (devis) {
-        setNumeroDevis(devis.numero);
-        setDateCreation(devis.date);
-        setDateValidite(devis.dateValidite);
-        
-        if (devis.clientId) {
-          try {
-            // Charger client depuis localStorage ou DB selon votre implémentation
-          } catch (error) {
-            console.warn('⚠️ Client non trouvé:', devis.clientId);
-          }
-        }
-        
-        console.log('✅ Détails devis chargés:', devis.numero);
-      }
-    } catch (error) {
-      console.error('❌ Erreur chargement détails:', error);
-    } finally {
-      setLoadingDevis(false);
-    }
-  };
-
-  // Initialisation côté client
-  useEffect(() => {
-    setIsClient(true);
-    
-    if (devisId) {
-      console.log("📝 Mode édition - chargement devis:", devisId);
-      loadDevisDetails(devisId);
-    } else {
-      console.log("📝 Mode création - nouveau devis");
-      setNumeroDevis(generateDevisNumber());
-      const now = new Date();
-      setDateCreation(now);
-      setDateValidite(calculateValidityDate(now));
-    }
-  }, [devisId]);
-
   // Affichage loading
-  if (!isClient || loadingDevis) {
+  if (!isClient || loadingDevis || (devisId && !devisLoaded)) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
         <div className="text-center">
@@ -222,7 +240,7 @@ function DevisCreationCore() {
   };
 
   // Sauvegarder nouveau client depuis modal
-  const handleSaveNewClient = async (clientData: Omit<Client, "id" | "createdAt">) => {    
+  const handleSaveNewClient = async (clientData: Omit<Client, "id" | "createdAt">) => {
     // Implémentation sauvegarde client
   };
 
@@ -279,8 +297,6 @@ function DevisCreationCore() {
     router.push("/devis");
   };
 
-  // ✅ SUPPRIMÉ - Export PDF géré maintenant dans DevisHeader avec tri
-
   return (
     <>
       <DevisLayout
@@ -290,13 +306,12 @@ function DevisCreationCore() {
         dateValidite={dateValidite}
         lignes={lignes}
         calculations={calculations}
-        // ✅ NOUVELLES PROPS - Transmission du tri vers PDF
         sortedLignes={sortedLignes}
         sortField={sortField}
         sortDirection={sortDirection}
         onSave={handleSave}
         onCancel={handleCancel}
-        onExportPDF={() => {}} // Fonction vide, gérée dans DevisHeader
+        onExportPDF={() => {}}
         onSelectClient={handleSelectClient}
         onCreateClient={handleCreateClient}
         onAddProduct={handleAddProduct}
