@@ -1,37 +1,38 @@
 import { createClient } from '@supabase/supabase-js';
 import { Database } from './types';
 
-// Guard pour éviter l'erreur au build
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+/**
+ * Client Supabase CORRIGÉ
+ * Fonctionne côté serveur ET client pour NextAuth
+ */
 
-// Créer un client "dummy" si variables manquantes (build time)
-let supabase: any;
+// ✅ VÉRIFICATION VARIABLES STRICTE
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-if (typeof window !== 'undefined') {
-  // Côté client : vérifier les variables
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Variables d\'environnement Supabase manquantes');
-  }
-  
-  supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-    }
-  });
-} else {
-  // Côté serveur : client dummy pour le build
-  supabase = {
-    from: () => ({
-      select: () => ({ data: null, error: null }),
-      insert: () => ({ data: null, error: null }),
-      delete: () => ({ data: null, error: null })
-    })
-  };
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('❌ Variables Supabase manquantes:');
+  console.error('NEXT_PUBLIC_SUPABASE_URL:', !!supabaseUrl);
+  console.error('NEXT_PUBLIC_SUPABASE_ANON_KEY:', !!supabaseAnonKey);
+  throw new Error('Variables d\'environnement Supabase manquantes');
 }
 
-export { supabase };
+// ✅ CLIENT RÉEL côté serveur ET client
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: typeof window !== 'undefined', // Session seulement côté client
+    autoRefreshToken: typeof window !== 'undefined',
+  },
+  // ✅ Configuration pour fonctionner côté serveur (NextAuth)
+  global: {
+    headers: {
+      'apikey': supabaseAnonKey,
+    },
+  },
+});
+
+// ✅ LOG DE DEBUG
+console.log('🔧 Supabase client créé côté:', typeof window !== 'undefined' ? 'CLIENT' : 'SERVEUR');
 
 export function handleSupabaseError(error: any): never {
   console.error('Erreur Supabase:', error);
@@ -48,12 +49,19 @@ export function handleSupabaseError(error: any): never {
 }
 
 export async function testConnection(): Promise<boolean> {
-  if (typeof window === 'undefined') return false;
-  
   try {
+    console.log('🧪 Test connexion Supabase...');
     const { data, error } = await supabase.from('categories').select('count').limit(1);
-    return !error;
-  } catch {
+    
+    if (error) {
+      console.log('❌ Test connexion échoué:', error.message);
+      return false;
+    }
+    
+    console.log('✅ Test connexion réussi');
+    return true;
+  } catch (err) {
+    console.log('❌ Test connexion erreur:', err);
     return false;
   }
 }
