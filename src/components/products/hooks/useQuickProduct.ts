@@ -92,14 +92,14 @@ export function useQuickProduct({
 
       if (error) handleSupabaseError(error);
 
-      // Transformer pour interface
+      // Transformer pour interface - FIX: Gérer colissage nullable
       const newProduct: Product = {
         code: newProductDB.code,
         designation: newProductDB.designation,
         prixAchat: Number(newProductDB.prix_achat),
         prixVente: Number(newProductDB.prix_vente),
         tva: Number(newProductDB.tva),
-        colissage: newProductDB.colissage,
+        colissage: newProductDB.colissage ?? 1, // ✅ FIX: Gérer le cas null avec fallback à 1
         categorie: newProductDB.categories?.nom || 'Incontinence',
         unite: newProductDB.designation.toLowerCase().includes('bte') ? 'boîte' : 'pièce'
       };

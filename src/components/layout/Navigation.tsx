@@ -8,10 +8,12 @@ import {
   Package,
   BarChart3,
   Archive,
-  List
+  List,
+  Shield
 } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/hooks/useAuth";
 
 interface NavItem {
   id: string;
@@ -19,6 +21,7 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
   href: string;
   badge?: number;
+  adminOnly?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -27,8 +30,9 @@ const NAV_ITEMS: NavItem[] = [
   { id: "devis-list", label: "Mes devis", icon: List, href: "/devis" },
   { id: "clients", label: "Clients", icon: Users, href: "/clients" },
   { id: "products", label: "Produits", icon: Package, href: "/products" },
-  { id: "stats", label: "Statistiques", icon: BarChart3, href: "/stats" },
+  { id: "stats", label: "Statistiques", icon: BarChart3, href: "/stats", adminOnly: true },
   { id: "archive", label: "Archives", icon: Archive, href: "/archive" },
+  { id: "admin", label: "Administration", icon: Shield, href: "/admin", adminOnly: true },
 ];
 
 /**
@@ -38,11 +42,18 @@ const NAV_ITEMS: NavItem[] = [
 export function Navigation() {
   const [activeItem, setActiveItem] = useState("dashboard");
   const router = useRouter();
+  const { isAdmin } = useAuth();
 
   const handleNavigation = (item: NavItem) => {
     setActiveItem(item.id);
     router.push(item.href);
   };
+
+  // Filtrer les éléments selon les permissions
+  const visibleItems = NAV_ITEMS.filter(item => {
+    if (item.adminOnly && !isAdmin) return false;
+    return true;
+  });
 
   return (
     <nav className={cn(
@@ -53,7 +64,7 @@ export function Navigation() {
     )}>
       <div className="p-3 group-hover:p-6 transition-all duration-300">
         <div className="space-y-2">
-          {NAV_ITEMS.map((item) => {
+          {visibleItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeItem === item.id;
             
@@ -76,7 +87,10 @@ export function Navigation() {
                 )}
                 title={item.label}
               >
-                <Icon className="w-5 h-5 flex-shrink-0" />
+                <Icon className={cn(
+                  "w-5 h-5 flex-shrink-0",
+                  item.adminOnly
+                )} />
                 
                 {/* Label avec animation d'apparition */}
                 <span className={cn(
@@ -86,9 +100,10 @@ export function Navigation() {
                 )}>
                   {item.label}
                 </span>
+                                
                 
-                {/* Badge avec animation */}
-                {item.badge && (
+                {/* Badge normal */}
+                {item.badge && !item.adminOnly && (
                   <span className={cn(
                     "px-2 py-1 text-xs rounded-full transition-all duration-300 ml-auto",
                     "bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-500/30",

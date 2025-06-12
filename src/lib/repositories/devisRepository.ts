@@ -190,27 +190,25 @@ export class DevisRepository {
     }
   }
 
-  /**
-   * Récupérer un devis avec ses lignes
+/**
+   * Récupérer un devis par ID avec ses lignes et informations client
    */
   static async getDevisById(devisId: string): Promise<Devis | null> {
     try {
-      // 1. Récupérer le devis avec client ET utilisateurs
+      // 1. Récupérer le devis avec client et utilisateurs
       const { data: devisData, error: devisError } = await supabase
         .from('devis')
         .select(`
           *,
-          clients(nom, siret),
+          clients(nom),
           created_by_user:users!created_by(nom, prenom, role),
           updated_by_user:users!updated_by(nom, prenom, role)
         `)
         .eq('id', devisId)
         .single();
 
-      if (devisError) {
-        if (devisError.code === 'PGRST116') return null;
-        handleSupabaseError(devisError);
-      }
+      if (devisError) handleSupabaseError(devisError);
+      if (!devisData) return null;
 
       // 2. Récupérer les lignes avec produits
       const { data: lignesData, error: lignesError } = await supabase
@@ -243,27 +241,28 @@ export class DevisRepository {
         margePourcent: Number(ligne.marge_pourcent)
       }));
 
+      // ✅ FIX: Gestion des types nullable avec fallbacks appropriés
       const devis: Devis = {
         id: devisData.id,
         numero: devisData.numero,
         date: new Date(devisData.date_creation),
         dateValidite: new Date(devisData.date_validite),
-        clientId: devisData.client_id,
+        clientId: devisData.client_id || '', // ✅ FIX: Fallback pour string obligatoire
         clientNom: devisData.clients?.nom,
         lignes,
         status: devisData.status as DevisStatus,
         totalHT: Number(devisData.total_ht),
         totalTTC: Number(devisData.total_ttc),
         margeGlobale: Number(devisData.marge_globale_pourcent),
-        notes: devisData.notes,
-        createdAt: new Date(devisData.created_at),
-        updatedAt: new Date(devisData.updated_at),
-        // ✅ NOUVELLES PROPRIÉTÉS
-        createdBy: devisData.created_by,
+        notes: devisData.notes || undefined, // ✅ FIX: Conversion null → undefined
+        createdAt: new Date(devisData.created_at || new Date().toISOString()), // ✅ FIX: Fallback pour Date
+        updatedAt: new Date(devisData.updated_at || new Date().toISOString()), // ✅ FIX: Fallback pour Date
+        // ✅ FIX: Gestion des champs optionnels nullable
+        createdBy: devisData.created_by || undefined, // ✅ FIX: null → undefined
         createdByName: devisData.created_by_user ? 
           `${devisData.created_by_user.prenom || ''} ${devisData.created_by_user.nom}`.trim() : 
           'Utilisateur inconnu',
-        updatedBy: devisData.updated_by,
+        updatedBy: devisData.updated_by || undefined, // ✅ FIX: null → undefined
         updatedByName: devisData.updated_by_user ? 
           `${devisData.updated_by_user.prenom || ''} ${devisData.updated_by_user.nom}`.trim() : 
           'Utilisateur inconnu'
@@ -276,7 +275,6 @@ export class DevisRepository {
       return null;
     }
   }
-
 
   /**
    * Récupérer tous les devis avec informations client
