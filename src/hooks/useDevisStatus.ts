@@ -53,8 +53,19 @@ export function useDevisStatus(
         handleSupabaseError(queryError);
       }
 
-      setStatusHistory(data || []);
-      console.log(`✅ ${data?.length || 0} changements de statut chargés`);
+      // ✅ FIX: Transformer les données pour gérer les champs nullable
+      const transformedData: StatusChange[] = (data || []).map(item => ({
+        id: item.id,
+        devis_id: item.devis_id,
+        previous_status: item.previous_status,
+        new_status: item.new_status,
+        changed_at: item.changed_at || new Date().toISOString(), // Fallback si null
+        changed_by: item.changed_by || undefined,
+        note: item.note || undefined
+      }));
+
+      setStatusHistory(transformedData);
+      console.log(`✅ ${transformedData.length} changements de statut chargés`);
 
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erreur chargement historique';

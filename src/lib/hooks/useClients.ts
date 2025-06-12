@@ -3,8 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { 
   Client, 
-  ClientCreateInput,
-  transformClientFromDB 
+  ClientCreateInput 
 } from "@/types";
 import { supabase, handleSupabaseError } from "@/lib/database/supabase";
 
@@ -19,6 +18,19 @@ interface UseClientsReturn {
   deleteClient: (id: string) => Promise<boolean>;
   refreshClients: () => void;
 }
+
+// ✅ FIX: Fonction de transformation qui gère les types nullable
+const transformClientFromSupabase = (clientData: any): Client => {
+  return {
+    id: clientData.id,
+    nom: clientData.nom,
+    adresse: clientData.adresse,
+    telephone: clientData.telephone,
+    email: clientData.email,
+    siret: clientData.siret,
+    createdAt: new Date(clientData.created_at || new Date().toISOString()) // Fallback si null
+  };
+};
 
 /**
  * Hook clients UNIFIÉ avec types standardisés
@@ -53,8 +65,8 @@ export function useClients(): UseClientsReturn {
         handleSupabaseError(queryError);
       }
 
-      // Transformer avec la fonction unifiée
-      const transformedClients: Client[] = (data || []).map(transformClientFromDB);
+      // ✅ FIX: Utiliser la fonction de transformation corrigée
+      const transformedClients: Client[] = (data || []).map(transformClientFromSupabase);
 
       setClients(transformedClients);
       
@@ -88,8 +100,8 @@ export function useClients(): UseClientsReturn {
         handleSupabaseError(error);
       }
 
-      // Transformer avec la fonction unifiée
-      const newClient = transformClientFromDB(data);
+      // ✅ FIX: Utiliser la fonction de transformation corrigée
+      const newClient = transformClientFromSupabase(data);
 
       // Ajouter à la liste locale immédiatement
       setClients(prev => [newClient, ...prev]);
@@ -127,8 +139,8 @@ export function useClients(): UseClientsReturn {
         handleSupabaseError(error);
       }
 
-      // Transformer avec la fonction unifiée
-      const updatedClient = transformClientFromDB(data);
+      // ✅ FIX: Utiliser la fonction de transformation corrigée
+      const updatedClient = transformClientFromSupabase(data);
 
       // Mettre à jour la liste locale
       setClients(prev => prev.map(c => c.id === id ? updatedClient : c));

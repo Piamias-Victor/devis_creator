@@ -37,6 +37,7 @@ export type Database = {
         Row: {
           adresse: string
           created_at: string | null
+          created_by: string | null
           email: string
           id: string
           nom: string
@@ -47,6 +48,7 @@ export type Database = {
         Insert: {
           adresse: string
           created_at?: string | null
+          created_by?: string | null
           email: string
           id?: string
           nom: string
@@ -57,6 +59,7 @@ export type Database = {
         Update: {
           adresse?: string
           created_at?: string | null
+          created_by?: string | null
           email?: string
           id?: string
           nom?: string
@@ -64,12 +67,21 @@ export type Database = {
           telephone?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clients_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       devis: {
         Row: {
           client_id: string | null
           created_at: string | null
+          created_by: string | null
           date_creation: string
           date_validite: string
           id: string
@@ -82,10 +94,12 @@ export type Database = {
           total_ttc: number | null
           total_tva: number | null
           updated_at: string | null
+          updated_by: string | null
         }
         Insert: {
           client_id?: string | null
           created_at?: string | null
+          created_by?: string | null
           date_creation: string
           date_validite: string
           id?: string
@@ -98,10 +112,12 @@ export type Database = {
           total_ttc?: number | null
           total_tva?: number | null
           updated_at?: string | null
+          updated_by?: string | null
         }
         Update: {
           client_id?: string | null
           created_at?: string | null
+          created_by?: string | null
           date_creation?: string
           date_validite?: string
           id?: string
@@ -114,6 +130,7 @@ export type Database = {
           total_ttc?: number | null
           total_tva?: number | null
           updated_at?: string | null
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -121,6 +138,68 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devis_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devis_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      devis_status_history: {
+        Row: {
+          changed_at: string | null
+          changed_by: string | null
+          created_at: string | null
+          devis_id: string
+          id: string
+          new_status: string
+          note: string | null
+          previous_status: string
+        }
+        Insert: {
+          changed_at?: string | null
+          changed_by?: string | null
+          created_at?: string | null
+          devis_id: string
+          id?: string
+          new_status: string
+          note?: string | null
+          previous_status: string
+        }
+        Update: {
+          changed_at?: string | null
+          changed_by?: string | null
+          created_at?: string | null
+          devis_id?: string
+          id?: string
+          new_status?: string
+          note?: string | null
+          previous_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devis_status_history_devis_id_fkey"
+            columns: ["devis_id"]
+            isOneToOne: false
+            referencedRelation: "devis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "devis_status_history_devis_id_fkey"
+            columns: ["devis_id"]
+            isOneToOne: false
+            referencedRelation: "devis_with_status_info"
             referencedColumns: ["id"]
           },
         ]
@@ -189,6 +268,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "lignes_devis_devis_id_fkey"
+            columns: ["devis_id"]
+            isOneToOne: false
+            referencedRelation: "devis_with_status_info"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "lignes_devis_produit_id_fkey"
             columns: ["produit_id"]
             isOneToOne: false
@@ -203,36 +289,42 @@ export type Database = {
           code: string
           colissage: number | null
           created_at: string | null
+          created_by: string | null
           designation: string
           id: string
           prix_achat: number
           prix_vente: number
           tva: number | null
           updated_at: string | null
+          updated_by: string | null
         }
         Insert: {
           categorie_id?: string | null
           code: string
           colissage?: number | null
           created_at?: string | null
+          created_by?: string | null
           designation: string
           id?: string
           prix_achat: number
           prix_vente: number
           tva?: number | null
           updated_at?: string | null
+          updated_by?: string | null
         }
         Update: {
           categorie_id?: string | null
           code?: string
           colissage?: number | null
           created_at?: string | null
+          created_by?: string | null
           designation?: string
           id?: string
           prix_achat?: number
           prix_vente?: number
           tva?: number | null
           updated_at?: string | null
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -242,14 +334,103 @@ export type Database = {
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "produits_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "produits_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      users: {
+        Row: {
+          actif: boolean | null
+          created_at: string | null
+          email: string
+          id: string
+          nom: string
+          prenom: string | null
+          role: string | null
+          telephone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          actif?: boolean | null
+          created_at?: string | null
+          email: string
+          id?: string
+          nom: string
+          prenom?: string | null
+          role?: string | null
+          telephone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          actif?: boolean | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          nom?: string
+          prenom?: string | null
+          role?: string | null
+          telephone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
-      [_ in never]: never
+      devis_with_status_info: {
+        Row: {
+          client_id: string | null
+          created_at: string | null
+          date_creation: string | null
+          date_validite: string | null
+          id: string | null
+          last_changed_by: string | null
+          last_status_change: string | null
+          marge_globale_euros: number | null
+          marge_globale_pourcent: number | null
+          notes: string | null
+          numero: string | null
+          status: string | null
+          status_changes_count: number | null
+          total_ht: number | null
+          total_ttc: number | null
+          total_tva: number | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "devis_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
-      [_ in never]: never
+      get_devis_status_history: {
+        Args: { devis_uuid: string }
+        Returns: {
+          id: string
+          previous_status: string
+          new_status: string
+          changed_at: string
+          changed_by: string
+          note: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

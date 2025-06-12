@@ -72,16 +72,16 @@ export const authOptions: AuthOptions = {
 
           console.log("✅ Authentification réussie!");
           
-          // ✅ RETOUR UTILISATEUR SIMPLIFIÉ
+          // ✅ FIX: RETOUR UTILISATEUR avec gestion des types nullable
           const authenticatedUser = {
             id: user.id,
             email: user.email,
             name: `${user.prenom || ''} ${user.nom}`.trim(),
-            // ✅ Propriétés custom SIMPLES (pas d'interface complexe)
-            role: user.role,
+            // ✅ FIX: Gérer role nullable avec fallback
+            role: user.role || 'pharmacien', // Fallback si null
             userId: user.id,
             nom: user.nom,
-            prenom: user.prenom
+            prenom: user.prenom || undefined // Convertir null en undefined
           };
 
           console.log("🎉 Retour utilisateur:", authenticatedUser);
