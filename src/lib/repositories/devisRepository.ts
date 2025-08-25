@@ -238,7 +238,7 @@ export class DevisRepository {
         dateValidite: new Date(devisData.date_validite),
         clientId: devisData.client_id || '',
         clientNom: devisData.clients?.nom,
-        pharmacieId: devisData.pharmacie_id || 'rond-point', // ✅ NOUVEAU: Défaut sur rond-point
+        pharmacieId: (devisData as any).pharmacie_id || 'rond-point', // ✅ NOUVEAU: Défaut sur rond-point
         lignes,
         status: devisData.status as DevisStatus,
         totalHT: Number(devisData.total_ht),
