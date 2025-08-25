@@ -4,7 +4,7 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { DevisLine, Product, DevisCalculations, Client } from "@/types";
 import { calculateLineAmounts, calculateDevisTotal } from "@/lib/utils/calculUtils";
 import { DevisRepository } from "@/lib/repositories/devisRepository";
-import { useAuth } from "./useAuth"; // ✅ AJOUTÉ pour traçabilité
+import { useAuth } from "./useAuth"; // AJOUTÉ pour traçabilité
 
 interface UseDevisReturn {
   lignes: DevisLine[];
@@ -20,7 +20,7 @@ interface UseDevisReturn {
   deleteLine: (id: string) => void;
   duplicateLine: (id: string) => void;
   clearAll: () => void;
-  saveDevis: (client: Client, dateValidite: Date, notes?: string) => Promise<string>;
+  saveDevis: (client: Client, dateValidite: Date, notes?: string, pharmacieId?: string) => Promise<string>; // ✅ MODIFIÉ: Ajout pharmacieId
   loadDevis: (devisId: string) => Promise<boolean>;
   resetDevis: () => void;
 }
@@ -37,7 +37,7 @@ export function useDevis(initialDevisId?: string): UseDevisReturn {
   const [devisId, setDevisId] = useState<string | null>(initialDevisId || null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-  // ✅ HOOK AUTHENTIFICATION pour traçabilité
+  // HOOK AUTHENTIFICATION pour traçabilité
   const { currentUser } = useAuth();
 
   // Générer un ID unique pour une ligne
@@ -149,11 +149,12 @@ export function useDevis(initialDevisId?: string): UseDevisReturn {
     }
   }, [lignes.length]);
 
-  // ✅ SAUVEGARDER DEVIS AVEC AUTHENTIFICATION
+  // ✅ SAUVEGARDER DEVIS AVEC AUTHENTIFICATION ET PHARMACIE
   const saveDevis = useCallback(async (
     client: Client,
     dateValidite: Date,
-    notes?: string
+    notes?: string,
+    pharmacieId: string = 'rond-point' // ✅ NOUVEAU: Paramètre pharmacieId avec défaut
   ): Promise<string> => {
     try {
       setSaving(true);
@@ -163,7 +164,7 @@ export function useDevis(initialDevisId?: string): UseDevisReturn {
         throw new Error("Impossible de sauvegarder un devis vide");
       }
 
-      // ✅ VÉRIFIER QUE L'UTILISATEUR EST CONNECTÉ
+      // VÉRIFIER QUE L'UTILISATEUR EST CONNECTÉ
       if (!currentUser) {
         throw new Error("Vous devez être connecté pour sauvegarder un devis");
       }
@@ -174,6 +175,7 @@ export function useDevis(initialDevisId?: string): UseDevisReturn {
       const devisData = {
         numero: devisId ? undefined : DevisRepository.generateNumeroDevis(),
         client_id: client.id,
+        pharmacie_id: pharmacieId, // ✅ NOUVEAU: Ajout du champ pharmacie_id
         date_creation: now.toISOString().split('T')[0],
         date_validite: dateValidite.toISOString().split('T')[0],
         lignes,
@@ -183,21 +185,21 @@ export function useDevis(initialDevisId?: string): UseDevisReturn {
         marge_globale_euros: calculations.margeGlobaleEuros,
         marge_globale_pourcent: calculations.margeGlobalePourcent,
         notes,
-        created_by: currentUser.id // ✅ TRAÇABILITÉ UTILISATEUR
+        created_by: currentUser.id // TRAÇABILITÉ UTILISATEUR
       };
 
       let savedDevisId: string;
 
       if (devisId) {
-        // ✅ Mise à jour avec utilisateur modificateur
+        // Mise à jour avec utilisateur modificateur
         await DevisRepository.updateDevis(devisId, devisData, currentUser.id);
         savedDevisId = devisId;
-        console.log('✅ Devis mis à jour par:', currentUser.fullName);
+        console.log('✅ Devis mis à jour par:', currentUser.fullName, 'Pharmacie:', pharmacieId);
       } else {
-        // ✅ Création avec utilisateur créateur
+        // Création avec utilisateur créateur
         savedDevisId = await DevisRepository.createDevis(devisData as any);
         setDevisId(savedDevisId);
-        console.log('✅ Nouveau devis créé par:', currentUser.fullName);
+        console.log('✅ Nouveau devis créé par:', currentUser.fullName, 'Pharmacie:', pharmacieId);
       }
 
       setLastSaved(new Date());
@@ -210,7 +212,7 @@ export function useDevis(initialDevisId?: string): UseDevisReturn {
     } finally {
       setSaving(false);
     }
-  }, [lignes, devisId, currentUser]); // ✅ currentUser dans dépendances
+  }, [lignes, devisId, currentUser]);
 
   // Réinitialiser le devis
   const resetDevis = useCallback(() => {

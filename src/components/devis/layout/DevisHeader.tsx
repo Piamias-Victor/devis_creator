@@ -8,7 +8,7 @@ import { formatPrice } from "@/lib/utils/devisUtils";
 import { ClientSelector } from "../ClientSelector";
 import { PdfGenerator } from "@/lib/pdf/pdfGenerator";
 
-import { supabase } from "@/lib/database/supabase"; // ✅ AJOUT pour historique
+import { supabase } from "@/lib/database/supabase";
 import { StatusBadge } from "../status/StatusBadge";
 import { StatusHistory } from "../status/StatusHistory";
 import { StatusManager } from "../status/StatusManager";
@@ -23,6 +23,7 @@ interface DevisHeaderProps {
   devisId?: string;
   sortedLignes: DevisLine[];
   calculations: DevisCalculations;
+  selectedPharmacieId?: string; // ✅ AJOUTÉ: Pharmacie sélectionnée
   onSave: () => void;
   onCancel: () => void;
   onExportPDF: () => void;
@@ -48,6 +49,7 @@ export function DevisHeader({
   devisId,
   sortedLignes,
   calculations,
+  selectedPharmacieId = 'rond-point', // ✅ AJOUTÉ: Valeur par défaut
   onSave,
   onCancel,
   onExportPDF,
@@ -62,10 +64,10 @@ export function DevisHeader({
   // États pour les modals
   const [showStatusManager, setShowStatusManager] = useState(false);
   const [showStatusHistory, setShowStatusHistory] = useState(false);
-  const [statusHistory, setStatusHistory] = useState<any[]>([]); // ✅ AJOUT état local
-  const [statusLoading, setStatusLoading] = useState(false); // ✅ AJOUT état loading
+  const [statusHistory, setStatusHistory] = useState<any[]>([]);
+  const [statusLoading, setStatusLoading] = useState(false);
 
-  // ✅ NOUVELLE FONCTION - Charger l'historique directement
+  // Charger l'historique directement
   const loadStatusHistory = async (devisIdToLoad: string) => {
     try {
       setStatusLoading(true);
@@ -91,7 +93,7 @@ export function DevisHeader({
     }
   };
 
-  // ✅ FONCTION SIMPLIFIÉE - Vérification expiration
+  // Vérification expiration
   const checkExpiredStatus = (dateValidite: Date): DevisStatus => {
     const now = new Date();
     const isExpired = now > dateValidite;
@@ -106,7 +108,7 @@ export function DevisHeader({
   // Vérifier si le devis est expiré
   const effectiveStatus = checkExpiredStatus(dateValidite);
   
-  // Export PDF avec tri CORRIGÉ + PROTECTION
+  // ✅ MODIFIÉ: Export PDF avec pharmacie
   const handleExportPDFSorted = async () => {
     if (!client) {
       alert("Veuillez sélectionner un client avant d'exporter");
@@ -119,7 +121,7 @@ export function DevisHeader({
     }
 
     try {
-      console.log(`📄 Export PDF avec ${sortedLignes.length} lignes triées`);
+      console.log(`📄 Export PDF avec ${sortedLignes.length} lignes triées, Pharmacie: ${selectedPharmacieId}`);
       
       await PdfGenerator.generateAndDownload({
         numeroDevis,
@@ -127,10 +129,11 @@ export function DevisHeader({
         dateValidite,
         client,
         lignes: sortedLignes,
-        calculations
+        calculations,
+        pharmacieId: selectedPharmacieId // ✅ AJOUTÉ: Passer la pharmacie au générateur
       });
       
-      console.log('✅ PDF généré avec ordre de tri respecté');
+      console.log('✅ PDF généré avec ordre de tri respecté et pharmacie:', selectedPharmacieId);
       
     } catch (error) {
       console.error("❌ Erreur export PDF:", error);
@@ -151,11 +154,9 @@ export function DevisHeader({
     setShowStatusHistory(true);
   };
 
-  // Changer le statut du devis - ✅ SIMPLIFIÉ
+  // Changer le statut du devis
   const handleStatusChange = async (newStatus: DevisStatus, note?: string) => {
     try {
-      // StatusManager gère maintenant directement le changement
-      // On notifie juste le parent du changement
       onStatusChanged?.(newStatus);
       console.log(`✅ Statut changé vers: ${newStatus}`);
     } catch (error) {
@@ -290,7 +291,7 @@ export function DevisHeader({
 
           {/* Actions toolbar */}
           <div className="flex items-center space-x-3 ml-6">
-            {/* NOUVEAU : Gestion statuts - ✅ PROTECTION */}
+            {/* Gestion statuts */}
             {devisId && (
               <>
                 <button
@@ -382,14 +383,14 @@ export function DevisHeader({
         </div>
       </div>
 
-      {/* Modal gestionnaire de statuts - ✅ CORRIGÉ */}
+      {/* Modal gestionnaire de statuts */}
       {devisId && (
         <StatusManager
           isOpen={showStatusManager}
           onClose={() => setShowStatusManager(false)}
           currentStatus={effectiveStatus}
           devisNumero={numeroDevis}
-          devisId={devisId} // ✅ CORRECTION: Passer l'ID du devis
+          devisId={devisId}
           onStatusChange={handleStatusChange}
           loading={statusLoading}
         />

@@ -110,6 +110,7 @@ export interface Devis {
   dateValidite: Date;
   clientId: string;
   clientNom?: string;
+  pharmacieId: string;           // ✅ NOUVEAU: ID de la pharmacie émettrice
   lignes: DevisLine[];
   status: DevisStatus;
   totalHT: number;
@@ -291,6 +292,7 @@ export interface DevisDB {
   id: string;
   numero: string;
   client_id: string;
+  pharmacie_id: string;          // ✅ NOUVEAU: Champ pharmacie ajouté
   date_creation: string;
   date_validite: string;
   status: string;
@@ -300,6 +302,8 @@ export interface DevisDB {
   notes?: string;
   created_at: string;
   updated_at: string;
+  created_by?: string;           // ✅ NOUVEAU: Pour traçabilité (déjà dans votre DB)
+  updated_by?: string;           // ✅ NOUVEAU: Pour traçabilité (déjà dans votre DB)
 }
 
 // ============================================
