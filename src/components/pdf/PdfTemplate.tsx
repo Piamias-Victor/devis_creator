@@ -5,6 +5,7 @@ import { PdfClientInfo } from './PdfClientInfo';
 import { PdfTable } from './PdfTable';
 import { PdfFooter } from './PdfFooter';
 import { Client, DevisLine, DevisCalculations } from '@/types';
+import { PharmacieInfo } from '@/config/pharmacies'; // ✅ NOUVEAU: Import type PharmacieInfo
 
 interface PdfTemplateProps {
   numeroDevis: string;
@@ -13,6 +14,7 @@ interface PdfTemplateProps {
   client: Client;
   lignes: DevisLine[];
   calculations: DevisCalculations;
+  pharmacie: PharmacieInfo; // ✅ NOUVEAU: Ajout de la pharmacie
 }
 
 /**
@@ -25,7 +27,8 @@ export function PdfTemplate({
   dateValidite,
   client,
   lignes,
-  calculations
+  calculations,
+  pharmacie // ✅ NOUVEAU: Recevoir la pharmacie
 }: PdfTemplateProps) {
   
   return (
@@ -38,8 +41,11 @@ export function PdfTemplate({
           dateValidite={dateValidite}
         />
         
-        {/* Adresses entreprise et client */}
-        <PdfClientInfo client={client} />
+        {/* Adresses entreprise et client avec pharmacie dynamique */}
+        <PdfClientInfo 
+          client={client} 
+          pharmacie={pharmacie} // ✅ NOUVEAU: Passer la pharmacie
+        />
         
         {/* Tableau des produits et totaux */}
         <PdfTable 
@@ -47,8 +53,8 @@ export function PdfTemplate({
           calculations={calculations}
         />
         
-        {/* Footer avec mentions légales */}
-        <PdfFooter />
+        {/* Footer avec mentions légales de la pharmacie */}
+        <PdfFooter pharmacie={pharmacie} /> {/* ✅ NOUVEAU: Passer la pharmacie */}
         
         {/* Numéro de page */}
         <Text style={pdfStyles.pageNumber}>

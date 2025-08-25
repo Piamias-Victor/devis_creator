@@ -10,8 +10,9 @@ import {
 export interface DevisCreateData {
   numero: string;
   client_id: string;
-  date_creation: string; // Format YYYY-MM-DD
-  date_validite: string; // Format YYYY-MM-DD
+  pharmacie_id: string;         // ✅ NOUVEAU: Ajout du champ pharmacie
+  date_creation: string;        // Format YYYY-MM-DD
+  date_validite: string;        // Format YYYY-MM-DD
   lignes: DevisLine[];
   total_ht: number;
   total_tva: number;
@@ -19,6 +20,7 @@ export interface DevisCreateData {
   marge_globale_euros: number;
   marge_globale_pourcent: number;
   notes?: string;
+  created_by: string;           // ID utilisateur créateur
 }
 
 export interface DevisStatsReturn {
@@ -29,21 +31,6 @@ export interface DevisStatsReturn {
   refuses: number;
   chiffreAffaireMensuel: number;
   margeGlobaleMoyenne: number;
-}
-
-export interface DevisCreateData {
-  numero: string;
-  client_id: string;
-  date_creation: string;
-  date_validite: string;
-  lignes: DevisLine[];
-  total_ht: number;
-  total_tva: number;
-  total_ttc: number;
-  marge_globale_euros: number;
-  marge_globale_pourcent: number;
-  notes?: string;
-  created_by: string; // ✅ NOUVEAU - ID utilisateur créateur
 }
 
 /**
@@ -57,12 +44,13 @@ export class DevisRepository {
    */
   static async createDevis(devisData: DevisCreateData): Promise<string> {
     try {
-      // 1. Créer le devis principal avec created_by
+      // 1. Créer le devis principal avec created_by et pharmacie_id
       const { data: devisInserted, error: devisError } = await supabase
         .from('devis')
         .insert({
           numero: devisData.numero,
           client_id: devisData.client_id,
+          pharmacie_id: devisData.pharmacie_id,  // ✅ NOUVEAU: Enregistrer la pharmacie
           date_creation: devisData.date_creation,
           date_validite: devisData.date_validite,
           status: 'brouillon',
@@ -72,8 +60,8 @@ export class DevisRepository {
           marge_globale_euros: devisData.marge_globale_euros,
           marge_globale_pourcent: devisData.marge_globale_pourcent,
           notes: devisData.notes,
-          created_by: devisData.created_by, // ✅ TRAÇABILITÉ
-          updated_by: devisData.created_by  // ✅ Même utilisateur au début
+          created_by: devisData.created_by,        // TRAÇABILITÉ
+          updated_by: devisData.created_by         // Même utilisateur au début
         })
         .select('id')
         .single();
@@ -87,7 +75,7 @@ export class DevisRepository {
         await this.saveLignesDevis(devisId, devisData.lignes);
       }
 
-      console.log('✅ Devis créé par utilisateur:', devisData.created_by);
+      console.log('✅ Devis créé par utilisateur:', devisData.created_by, 'pour pharmacie:', devisData.pharmacie_id);
       return devisId;
 
     } catch (error) {
@@ -155,14 +143,15 @@ export class DevisRepository {
   static async updateDevis(
     devisId: string, 
     devisData: Partial<DevisCreateData>,
-    updatedBy: string // ✅ NOUVEAU - ID utilisateur modificateur
+    updatedBy: string // ID utilisateur modificateur
   ): Promise<void> {
     try {
       // 1. Mettre à jour le devis principal
-      const updateData: any = { updated_by: updatedBy }; // ✅ Toujours tracer qui modifie
+      const updateData: any = { updated_by: updatedBy }; // Toujours tracer qui modifie
       
       if (devisData.date_creation) updateData.date_creation = devisData.date_creation;
       if (devisData.date_validite) updateData.date_validite = devisData.date_validite;
+      if (devisData.pharmacie_id) updateData.pharmacie_id = devisData.pharmacie_id; // ✅ NOUVEAU
       if (devisData.total_ht !== undefined) updateData.total_ht = devisData.total_ht;
       if (devisData.total_tva !== undefined) updateData.total_tva = devisData.total_tva;
       if (devisData.total_ttc !== undefined) updateData.total_ttc = devisData.total_ttc;
@@ -190,7 +179,7 @@ export class DevisRepository {
     }
   }
 
-/**
+  /**
    * Récupérer un devis par ID avec ses lignes et informations client
    */
   static async getDevisById(devisId: string): Promise<Devis | null> {
@@ -241,28 +230,29 @@ export class DevisRepository {
         margePourcent: Number(ligne.marge_pourcent)
       }));
 
-      // ✅ FIX: Gestion des types nullable avec fallbacks appropriés
+      // Gestion des types nullable avec fallbacks appropriés
       const devis: Devis = {
         id: devisData.id,
         numero: devisData.numero,
         date: new Date(devisData.date_creation),
         dateValidite: new Date(devisData.date_validite),
-        clientId: devisData.client_id || '', // ✅ FIX: Fallback pour string obligatoire
+        clientId: devisData.client_id || '',
         clientNom: devisData.clients?.nom,
+        pharmacieId: devisData.pharmacie_id || 'rond-point', // ✅ NOUVEAU: Défaut sur rond-point
         lignes,
         status: devisData.status as DevisStatus,
         totalHT: Number(devisData.total_ht),
         totalTTC: Number(devisData.total_ttc),
         margeGlobale: Number(devisData.marge_globale_pourcent),
-        notes: devisData.notes || undefined, // ✅ FIX: Conversion null → undefined
-        createdAt: new Date(devisData.created_at || new Date().toISOString()), // ✅ FIX: Fallback pour Date
-        updatedAt: new Date(devisData.updated_at || new Date().toISOString()), // ✅ FIX: Fallback pour Date
-        // ✅ FIX: Gestion des champs optionnels nullable
-        createdBy: devisData.created_by || undefined, // ✅ FIX: null → undefined
+        notes: devisData.notes || undefined,
+        createdAt: new Date(devisData.created_at || new Date().toISOString()),
+        updatedAt: new Date(devisData.updated_at || new Date().toISOString()),
+        // Gestion des champs optionnels nullable
+        createdBy: devisData.created_by || undefined,
         createdByName: devisData.created_by_user ? 
           `${devisData.created_by_user.prenom || ''} ${devisData.created_by_user.nom}`.trim() : 
           'Utilisateur inconnu',
-        updatedBy: devisData.updated_by || undefined, // ✅ FIX: null → undefined
+        updatedBy: devisData.updated_by || undefined,
         updatedByName: devisData.updated_by_user ? 
           `${devisData.updated_by_user.prenom || ''} ${devisData.updated_by_user.nom}`.trim() : 
           'Utilisateur inconnu'
@@ -300,6 +290,7 @@ export class DevisRepository {
         dateValidite: new Date(d.date_validite),
         clientId: d.client_id,
         clientNom: d.clients?.nom || 'Client inconnu',
+        pharmacieId: d.pharmacie_id || 'rond-point', // ✅ NOUVEAU: Défaut sur rond-point
         lignes: [],
         status: d.status as DevisStatus,
         totalHT: Number(d.total_ht || 0),
@@ -308,7 +299,7 @@ export class DevisRepository {
         notes: d.notes,
         createdAt: new Date(d.created_at),
         updatedAt: new Date(d.updated_at),
-        // ✅ INFORMATIONS CRÉATEUR
+        // INFORMATIONS CRÉATEUR
         createdBy: d.created_by,
         createdByName: d.created_by_user ? 
           `${d.created_by_user.prenom || ''} ${d.created_by_user.nom}`.trim() : 
@@ -346,6 +337,7 @@ export class DevisRepository {
         dateValidite: new Date(d.date_validite),
         clientId: d.client_id,
         clientNom: d.clients?.nom || 'Client inconnu',
+        pharmacieId: d.pharmacie_id || 'rond-point', // ✅ NOUVEAU
         lignes: [],
         status: d.status as DevisStatus,
         totalHT: Number(d.total_ht || 0),
@@ -455,13 +447,14 @@ export class DevisRepository {
         created_by: originalDevis.createdBy || 'system',
         numero: nouveauNumero,
         client_id: originalDevis.clientId,
+        pharmacie_id: originalDevis.pharmacieId, // ✅ NOUVEAU: Conserver la pharmacie d'origine
         date_creation: now.toISOString().split('T')[0],
-        date_validite: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // +30 jours
-        lignes: originalDevis.lignes, // Lignes identiques
+        date_validite: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        lignes: originalDevis.lignes,
         total_ht: originalDevis.totalHT,
         total_tva: originalDevis.totalTTC - originalDevis.totalHT,
         total_ttc: originalDevis.totalTTC,
-        marge_globale_euros: 0, // Recalculé automatiquement
+        marge_globale_euros: 0,
         marge_globale_pourcent: originalDevis.margeGlobale,
         notes: `Copie de ${originalDevis.numero} - ${originalDevis.notes || ''}`.trim()
       };
@@ -478,49 +471,53 @@ export class DevisRepository {
     }
   }
 
+  /**
+   * Dupliquer un devis avec l'utilisateur actuel
+   */
   static async duplicateDevisWithCurrentUser(devisId: string, currentUserId: string): Promise<string | null> {
-  try {
-    console.log('🔄 Duplication devis par utilisateur:', currentUserId);
-    
-    // 1. Récupérer le devis original avec ses lignes
-    const originalDevis = await this.getDevisById(devisId);
-    
-    if (!originalDevis) {
-      throw new Error('Devis original introuvable');
+    try {
+      console.log('🔄 Duplication devis par utilisateur:', currentUserId);
+      
+      // 1. Récupérer le devis original avec ses lignes
+      const originalDevis = await this.getDevisById(devisId);
+      
+      if (!originalDevis) {
+        throw new Error('Devis original introuvable');
+      }
+
+      console.log('✅ Devis original récupéré:', originalDevis.numero);
+
+      // 2. Préparer les données pour la duplication
+      const now = new Date();
+      const nouveauNumero = this.generateNumeroDevis();
+      
+      const duplicatedDevisData: DevisCreateData = {
+        numero: nouveauNumero,
+        client_id: originalDevis.clientId,
+        pharmacie_id: originalDevis.pharmacieId, // ✅ NOUVEAU: Conserver la pharmacie d'origine
+        date_creation: now.toISOString().split('T')[0],
+        date_validite: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        lignes: originalDevis.lignes,
+        total_ht: originalDevis.totalHT,
+        total_tva: originalDevis.totalTTC - originalDevis.totalHT,
+        total_ttc: originalDevis.totalTTC,
+        marge_globale_euros: 0,
+        marge_globale_pourcent: originalDevis.margeGlobale,
+        notes: `Copie de ${originalDevis.numero} - ${originalDevis.notes || ''}`.trim(),
+        created_by: currentUserId // UTILISATEUR ACTUEL comme créateur de la copie
+      };
+
+      // 3. Créer le nouveau devis
+      const newDevisId = await this.createDevis(duplicatedDevisData);
+      
+      console.log('✅ Devis dupliqué:', nouveauNumero, 'par utilisateur:', currentUserId);
+      return newDevisId;
+
+    } catch (error) {
+      console.error('❌ Erreur duplication devis:', error);
+      return null;
     }
-
-    console.log('✅ Devis original récupéré:', originalDevis.numero);
-
-    // 2. Préparer les données pour la duplication
-    const now = new Date();
-    const nouveauNumero = this.generateNumeroDevis();
-    
-    const duplicatedDevisData: DevisCreateData = {
-      numero: nouveauNumero,
-      client_id: originalDevis.clientId,
-      date_creation: now.toISOString().split('T')[0],
-      date_validite: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // +30 jours
-      lignes: originalDevis.lignes, // Lignes identiques
-      total_ht: originalDevis.totalHT,
-      total_tva: originalDevis.totalTTC - originalDevis.totalHT,
-      total_ttc: originalDevis.totalTTC,
-      marge_globale_euros: 0, // Recalculé automatiquement
-      marge_globale_pourcent: originalDevis.margeGlobale,
-      notes: `Copie de ${originalDevis.numero} - ${originalDevis.notes || ''}`.trim(),
-      created_by: currentUserId // ✅ UTILISATEUR ACTUEL comme créateur de la copie
-    };
-
-    // 3. Créer le nouveau devis
-    const newDevisId = await this.createDevis(duplicatedDevisData);
-    
-    console.log('✅ Devis dupliqué:', nouveauNumero, 'par utilisateur:', currentUserId);
-    return newDevisId;
-
-  } catch (error) {
-    console.error('❌ Erreur duplication devis:', error);
-    return null;
   }
-}
 
   /**
    * Générer un numéro de devis unique
@@ -534,6 +531,4 @@ export class DevisRepository {
     
     return `DEV${year}${month}${day}-${sequence}`;
   }
-
-  
 }

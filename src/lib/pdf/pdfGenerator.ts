@@ -1,6 +1,7 @@
 import { pdf } from '@react-pdf/renderer';
 import { PdfTemplate } from '@/components/pdf/PdfTemplate';
 import { Client, DevisLine, DevisCalculations } from '@/types';
+import { getPharmacieById } from '@/config/pharmacies'; // ✅ NOUVEAU: Import config pharmacies
 
 interface GeneratePdfParams {
   numeroDevis: string;
@@ -9,6 +10,7 @@ interface GeneratePdfParams {
   client: Client;
   lignes: DevisLine[];
   calculations: DevisCalculations;
+  pharmacieId?: string; // ✅ NOUVEAU: Ajout de pharmacieId optionnel
 }
 
 /**
@@ -26,18 +28,23 @@ export class PdfGenerator {
     dateValidite,
     client,
     lignes,
-    calculations
+    calculations,
+    pharmacieId = 'rond-point' // ✅ NOUVEAU: Défaut sur rond-point
   }: GeneratePdfParams): Promise<void> {
     
     try {
-      // Créer le document PDF
+      // ✅ NOUVEAU: Récupérer les infos de la pharmacie
+      const pharmacie = getPharmacieById(pharmacieId);
+      
+      // Créer le document PDF avec pharmacie
       const document = PdfTemplate({
         numeroDevis,
         dateCreation,
         dateValidite,
         client,
         lignes,
-        calculations
+        calculations,
+        pharmacie // ✅ NOUVEAU: Passer la pharmacie au template
       });
       
       // Générer le blob PDF
@@ -89,7 +96,13 @@ export class PdfGenerator {
    */
   static async preview(params: GeneratePdfParams): Promise<void> {
     try {
-      const document = PdfTemplate(params);
+      // ✅ NOUVEAU: Récupérer les infos de la pharmacie
+      const pharmacie = getPharmacieById(params.pharmacieId || 'rond-point');
+      
+      const document = PdfTemplate({
+        ...params,
+        pharmacie // ✅ NOUVEAU: Passer la pharmacie
+      });
       const blob = await pdf(document).toBlob();
       const url = URL.createObjectURL(blob);
       

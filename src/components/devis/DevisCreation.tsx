@@ -5,10 +5,11 @@ import { Client, DevisLine, Product } from "@/types";
 import { generateDevisNumber, calculateValidityDate } from "@/lib/utils/devisUtils";
 import { ClientModal } from "../clients/ClientModal";
 import { useDevis } from "@/lib/hooks/useDevis";
-import { useClients } from "@/lib/hooks/useClients"; // ✅ AJOUTÉ
+import { useClients } from "@/lib/hooks/useClients";
 import { useDevisSort } from "./table/useDevisSort";
 import { DevisRepository } from "@/lib/repositories/devisRepository";
 import { supabase } from "@/lib/database/supabase";
+import { getPharmaciesList } from "@/config/pharmacies"; // ✅ NOUVEAU: Import config pharmacies
 
 const handleSaveLineToDatabase = async (ligne: DevisLine): Promise<void> => {
   try {
@@ -44,7 +45,7 @@ function DevisCreationCore() {
   const searchParams = useSearchParams();
   const devisId = searchParams?.get('id');
   
-  // ✅ Hook clients ajouté pour récupération automatique
+  // Hook clients ajouté pour récupération automatique
   const { clients, loading: clientsLoading } = useClients();
   
   // État du devis
@@ -52,10 +53,11 @@ function DevisCreationCore() {
   const [dateCreation, setDateCreation] = useState(new Date());
   const [dateValidite, setDateValidite] = useState(new Date());
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [selectedPharmacieId, setSelectedPharmacieId] = useState<string>('rond-point'); // ✅ NOUVEAU: État pharmacie
   const [saving, setSaving] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [loadingDevis, setLoadingDevis] = useState(false);
-  const [devisLoaded, setDevisLoaded] = useState(false); // ✅ GARDE anti-boucle
+  const [devisLoaded, setDevisLoaded] = useState(false); // GARDE anti-boucle
 
   // Modal création client
   const [showClientModal, setShowClientModal] = useState(false);
@@ -80,9 +82,12 @@ function DevisCreationCore() {
   const sortField = sortData.sortField || 'designation';
   const sortDirection = sortData.sortDirection || 'asc';
 
-  // ✅ FONCTION CORRIGÉE avec garde anti-boucle
+  // Liste des pharmacies disponibles
+  const pharmaciesList = getPharmaciesList(); // ✅ NOUVEAU: Récupérer la liste des pharmacies
+
+  // FONCTION CORRIGÉE avec garde anti-boucle
   const loadDevisDetails = async (devisIdToLoad: string) => {
-    // ✅ GARDE - éviter double chargement
+    // GARDE - éviter double chargement
     if (devisLoaded || loadingDevis) {
       console.log('⏭️ Devis déjà chargé, skip');
       return;
@@ -98,8 +103,9 @@ function DevisCreationCore() {
         setNumeroDevis(devis.numero);
         setDateCreation(devis.date);
         setDateValidite(devis.dateValidite);
+        setSelectedPharmacieId(devis.pharmacieId || 'rond-point'); // ✅ NOUVEAU: Charger la pharmacie
         
-        // ✅ Récupération client via hook useClients
+        // Récupération client via hook useClients
         if (devis.clientId && clients.length > 0) {
           const client = clients.find(c => c.id === devis.clientId);
           if (client) {
@@ -110,8 +116,8 @@ function DevisCreationCore() {
           }
         }
         
-        setDevisLoaded(true); // ✅ MARQUER COMME CHARGÉ
-        console.log('✅ Détails devis chargés:', devis.numero);
+        setDevisLoaded(true); // MARQUER COMME CHARGÉ
+        console.log('✅ Détails devis chargés:', devis.numero, 'Pharmacie:', devis.pharmacieId);
       }
     } catch (error) {
       console.error('❌ Erreur chargement détails:', error);
@@ -120,13 +126,13 @@ function DevisCreationCore() {
     }
   };
 
-  // ✅ EFFET UNIFIÉ - Initialisation côté client avec garde
+  // EFFET UNIFIÉ - Initialisation côté client avec garde
   useEffect(() => {
     setIsClient(true);
     
     if (devisId && !devisLoaded) {
       console.log("📝 Mode édition - chargement devis:", devisId);
-      // ✅ Attendre que les clients soient chargés AVANT le devis
+      // Attendre que les clients soient chargés AVANT le devis
       if (!clientsLoading && clients.length > 0) {
         loadDevisDetails(devisId);
       }
@@ -136,7 +142,7 @@ function DevisCreationCore() {
       const now = new Date();
       setDateCreation(now);
       setDateValidite(calculateValidityDate(now));
-      setDevisLoaded(true); // ✅ Éviter re-initialisation
+      setDevisLoaded(true); // Éviter re-initialisation
     }
   }, [devisId, clients, clientsLoading, devisLoaded]);
 
@@ -249,7 +255,7 @@ function DevisCreationCore() {
     addLine(product);
   };
 
-  // Sauvegarder le devis AVEC SUPABASE
+  // ✅ NOUVEAU: Sauvegarder le devis AVEC PHARMACIE
   const handleSave = async () => {
     if (!selectedClient) {
       alert("Veuillez sélectionner un client");
@@ -264,13 +270,15 @@ function DevisCreationCore() {
     setSaving(true);
     
     try {
+      // ✅ NOUVEAU: Passer pharmacieId à saveDevis
       const savedDevisId = await saveDevis(
         selectedClient,
         dateValidite,
-        undefined
+        undefined,
+        selectedPharmacieId // ✅ NOUVEAU: Passer la pharmacie sélectionnée
       );
       
-      console.log("✅ Devis sauvegardé en Supabase:", savedDevisId);
+      console.log("✅ Devis sauvegardé en Supabase:", savedDevisId, "Pharmacie:", selectedPharmacieId);
       alert(`Devis sauvegardé avec succès !`);
       
       if (!devisId) {
@@ -309,9 +317,28 @@ function DevisCreationCore() {
         sortedLignes={sortedLignes}
         sortField={sortField}
         sortDirection={sortDirection}
+        selectedPharmacieId={selectedPharmacieId} // ✅ NOUVEAU: Passer la pharmacie sélectionnée
+        pharmaciesList={pharmaciesList} // ✅ NOUVEAU: Passer la liste des pharmacies
+        onPharmacieChange={setSelectedPharmacieId} // ✅ NOUVEAU: Handler changement pharmacie
         onSave={handleSave}
         onCancel={handleCancel}
-        onExportPDF={() => {}}
+        onExportPDF={() => {
+          // ✅ NOUVEAU: Stocker pharmacieId dans sessionStorage pour le PDF
+          if (selectedClient && lignes.length > 0) {
+            const totaux = calculations;
+            sessionStorage.setItem('pdfDevisData', JSON.stringify({
+              numero: numeroDevis,
+              date: dateCreation.toISOString(),
+              dateValidite: dateValidite.toISOString(),
+              client: selectedClient,
+              pharmacieId: selectedPharmacieId, // ✅ NOUVEAU: Inclure pharmacieId
+              lines: lignes,
+              totaux,
+              notes: '' // À gérer si vous avez des notes
+            }));
+            window.open('/devis/pdf', '_blank');
+          }
+        }}
         onSelectClient={handleSelectClient}
         onCreateClient={handleCreateClient}
         onAddProduct={handleAddProduct}
