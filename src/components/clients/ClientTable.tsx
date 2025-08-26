@@ -59,7 +59,7 @@ export function ClientTable({ clients, onEdit, onDelete, loading }: ClientTableP
       <div className="overflow-x-auto">
         <table className="w-full">
           {/* Header */}
-          <thead className="bg-gray-100 border-b border-gray100">
+          <thead className="bg-gray-100 border-b border-gray-100">
             <tr>
               <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">
                 Client
@@ -119,10 +119,12 @@ export function ClientTable({ clients, onEdit, onDelete, loading }: ClientTableP
                   </div>
                 </td>
                 
-                {/* SIRET */}
+                {/* SIRET - MODIFIÉ: Affichage conditionnel */}
                 <td className="px-6 py-4">
                   <span className="text-sm font-mono text-gray-700 dark:text-gray-300">
-                    {client.siret}
+                    {client.siret || (
+                      <span className="text-gray-400 italic">Non renseigné</span>
+                    )}
                   </span>
                 </td>
                 

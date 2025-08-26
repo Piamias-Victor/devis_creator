@@ -12,7 +12,7 @@ export interface Client {
   adresse: string;
   telephone: string;
   email: string;
-  siret: string;
+  siret?: string;  // MODIFIÉ: Rendu optionnel avec ?
   createdAt: Date;
 }
 
@@ -41,7 +41,7 @@ export interface ClientCreateInput {
   adresse: string;
   telephone: string;
   email: string;
-  siret: string;
+  siret?: string;  // MODIFIÉ: Rendu optionnel avec ?
 }
 
 // ============================================
@@ -283,7 +283,7 @@ export interface ClientDB {
   adresse: string;
   telephone: string;
   email: string;
-  siret: string;
+  siret?: string;  // MODIFIÉ: Rendu optionnel avec ?
   created_at: string;
   updated_at: string;
 }
@@ -359,7 +359,7 @@ export function transformClientFromDB(clientDB: ClientDB): Client {
     adresse: clientDB.adresse,
     telephone: clientDB.telephone,
     email: clientDB.email,
-    siret: clientDB.siret,
+    siret: clientDB.siret,  // MODIFIÉ: Peut être undefined maintenant
     createdAt: new Date(clientDB.created_at)
   };
 }
