@@ -6,13 +6,18 @@ import { formatEuros } from '@/lib/utils/calculUtils';
 interface PdfTableProps {
   lignes: DevisLine[];
   calculations: DevisCalculations;
+  showNombreCartons?: boolean; // ✅ NOUVEAU: Option pour afficher les cartons
 }
 
 /**
  * Tableau des produits PDF
  * Colonnes: Code | Réf | Désignation | Qté | HT U Brut | %Rem | HT U Net | Mt HT Net | %TVA
  */
-export function PdfTable({ lignes, calculations }: PdfTableProps) {
+export function PdfTable({ 
+  lignes, 
+  calculations, 
+  showNombreCartons = true // ✅ NOUVEAU: Valeur par défaut pour rétrocompatibilité
+}: PdfTableProps) {
   
   const formatPrice = (price: number) => {
     return price.toFixed(4).replace('.', ',');
@@ -44,7 +49,8 @@ export function PdfTable({ lignes, calculations }: PdfTableProps) {
           <Text style={pdfStyles.colCode}></Text>
           <Text style={pdfStyles.colDesignation}>
             {ligne.designation}
-            {ligne.colissage && (
+            {/* ✅ MODIFIÉ: Affichage conditionnel des cartons */}
+            {showNombreCartons && ligne.colissage && (
               <Text>{'\n'}* {Math.ceil(ligne.quantite / ligne.colissage)} CARTONS</Text>
             )}
           </Text>

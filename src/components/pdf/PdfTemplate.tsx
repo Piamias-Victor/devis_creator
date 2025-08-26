@@ -15,6 +15,7 @@ interface PdfTemplateProps {
   lignes: DevisLine[];
   calculations: DevisCalculations;
   pharmacie: PharmacieInfo; // ✅ NOUVEAU: Ajout de la pharmacie
+  showNombreCartons?: boolean; // ✅ NOUVEAU: Option pour afficher les cartons
 }
 
 /**
@@ -28,7 +29,8 @@ export function PdfTemplate({
   client,
   lignes,
   calculations,
-  pharmacie // ✅ NOUVEAU: Recevoir la pharmacie
+  pharmacie, // ✅ NOUVEAU: Recevoir la pharmacie
+  showNombreCartons = true // ✅ NOUVEAU: Valeur par défaut pour rétrocompatibilité
 }: PdfTemplateProps) {
   
   return (
@@ -47,10 +49,11 @@ export function PdfTemplate({
           pharmacie={pharmacie} // ✅ NOUVEAU: Passer la pharmacie
         />
         
-        {/* Tableau des produits et totaux */}
+        {/* Tableau des produits et totaux avec option cartons */}
         <PdfTable 
           lignes={lignes}
           calculations={calculations}
+          showNombreCartons={showNombreCartons} // ✅ NOUVEAU: Passer l'option cartons
         />
         
         {/* Footer avec mentions légales de la pharmacie */}

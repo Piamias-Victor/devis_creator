@@ -11,6 +11,7 @@ interface GeneratePdfParams {
   lignes: DevisLine[];
   calculations: DevisCalculations;
   pharmacieId?: string; // ✅ NOUVEAU: Ajout de pharmacieId optionnel
+  showNombreCartons?: boolean; // ✅ NOUVEAU: Option pour afficher les cartons
 }
 
 /**
@@ -29,14 +30,15 @@ export class PdfGenerator {
     client,
     lignes,
     calculations,
-    pharmacieId = 'rond-point' // ✅ NOUVEAU: Défaut sur rond-point
+    pharmacieId = 'rond-point', // ✅ NOUVEAU: Défaut sur rond-point
+    showNombreCartons = true // ✅ NOUVEAU: Défaut sur true pour rétrocompatibilité
   }: GeneratePdfParams): Promise<void> {
     
     try {
       // ✅ NOUVEAU: Récupérer les infos de la pharmacie
       const pharmacie = getPharmacieById(pharmacieId);
       
-      // Créer le document PDF avec pharmacie
+      // Créer le document PDF avec pharmacie et options
       const document = PdfTemplate({
         numeroDevis,
         dateCreation,
@@ -44,7 +46,8 @@ export class PdfGenerator {
         client,
         lignes,
         calculations,
-        pharmacie // ✅ NOUVEAU: Passer la pharmacie au template
+        pharmacie, // ✅ NOUVEAU: Passer la pharmacie au template
+        showNombreCartons // ✅ NOUVEAU: Passer l'option cartons
       });
       
       // Générer le blob PDF
@@ -101,7 +104,8 @@ export class PdfGenerator {
       
       const document = PdfTemplate({
         ...params,
-        pharmacie // ✅ NOUVEAU: Passer la pharmacie
+        pharmacie, // ✅ NOUVEAU: Passer la pharmacie
+        showNombreCartons: params.showNombreCartons ?? true // ✅ NOUVEAU: Passer l'option cartons avec défaut
       });
       const blob = await pdf(document).toBlob();
       const url = URL.createObjectURL(blob);
