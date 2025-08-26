@@ -246,6 +246,22 @@ export interface DevisExportOptions {
   includeDetails: boolean;
   format: 'pdf' | 'excel' | 'csv';
   template: 'standard' | 'minimal' | 'detaille';
+  // ✅ NOUVEAU: Option pour affichage cartons
+  showNombreCartons?: boolean;
+}
+
+// ============================================
+// ✅ NOUVEAUX TYPES PDF EXPORT
+// ============================================
+export interface PdfExportOptions {
+  showNombreCartons: boolean;
+}
+
+export interface PdfExportModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (options: PdfExportOptions) => void;
+  loading?: boolean;
 }
 
 // ============================================

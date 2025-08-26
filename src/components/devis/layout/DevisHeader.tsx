@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils/cn";
-import { Client, DevisLine, DevisCalculations, DevisStatus } from "@/types";
+import { Client, DevisLine, DevisCalculations, DevisStatus, PdfExportOptions } from "@/types";
 import { Save, FileX, FileText, ArrowLeft, Settings, History } from "lucide-react";
 import { formatPrice } from "@/lib/utils/devisUtils";
 import { ClientSelector } from "../ClientSelector";
@@ -12,6 +12,7 @@ import { supabase } from "@/lib/database/supabase";
 import { StatusBadge } from "../status/StatusBadge";
 import { StatusHistory } from "../status/StatusHistory";
 import { StatusManager } from "../status/StatusManager";
+import { PdfExportModal } from "@/components/modal/PdfExportModal";
 
 interface DevisHeaderProps {
   client: Client | null;
@@ -64,6 +65,8 @@ export function DevisHeader({
   // États pour les modals
   const [showStatusManager, setShowStatusManager] = useState(false);
   const [showStatusHistory, setShowStatusHistory] = useState(false);
+  const [showPdfModal, setShowPdfModal] = useState(false); // ✅ NOUVEAU: État pour le modal PDF
+  const [pdfExporting, setPdfExporting] = useState(false); // ✅ NOUVEAU: État de chargement PDF
   const [statusHistory, setStatusHistory] = useState<any[]>([]);
   const [statusLoading, setStatusLoading] = useState(false);
 
@@ -108,8 +111,8 @@ export function DevisHeader({
   // Vérifier si le devis est expiré
   const effectiveStatus = checkExpiredStatus(dateValidite);
   
-  // ✅ MODIFIÉ: Export PDF avec pharmacie
-  const handleExportPDFSorted = async () => {
+  // ✅ MODIFIÉ: Ouvrir le modal au lieu de générer directement
+  const handleExportPDFClick = () => {
     if (!client) {
       alert("Veuillez sélectionner un client avant d'exporter");
       return;
@@ -120,24 +123,34 @@ export function DevisHeader({
       return;
     }
 
+    setShowPdfModal(true);
+  };
+
+  // ✅ NOUVEAU: Générer le PDF avec les options sélectionnées
+  const handlePdfExport = async (options: PdfExportOptions) => {
     try {
-      console.log(`📄 Export PDF avec ${sortedLignes.length} lignes triées, Pharmacie: ${selectedPharmacieId}`);
+      setPdfExporting(true);
+      console.log(`📄 Export PDF avec options:`, options, `Pharmacie: ${selectedPharmacieId}`);
       
       await PdfGenerator.generateAndDownload({
         numeroDevis,
         dateCreation,
         dateValidite,
-        client,
+        client: client!,
         lignes: sortedLignes,
         calculations,
-        pharmacieId: selectedPharmacieId // ✅ AJOUTÉ: Passer la pharmacie au générateur
+        pharmacieId: selectedPharmacieId,
+        showNombreCartons: options.showNombreCartons // ✅ NOUVEAU: Passer l'option
       });
       
-      console.log('✅ PDF généré avec ordre de tri respecté et pharmacie:', selectedPharmacieId);
+      console.log('✅ PDF généré avec options:', options);
+      setShowPdfModal(false);
       
     } catch (error) {
       console.error("❌ Erreur export PDF:", error);
       alert("Erreur lors de l'export PDF. Veuillez réessayer.");
+    } finally {
+      setPdfExporting(false);
     }
   };
 
@@ -330,9 +343,9 @@ export function DevisHeader({
               </>
             )}
 
-            {/* Export PDF */}
+            {/* ✅ MODIFIÉ: Export PDF avec modal */}
             <button
-              onClick={handleExportPDFSorted}
+              onClick={handleExportPDFClick}
               disabled={!client || !sortedLignes || sortedLignes.length === 0}
               className={cn(
                 "flex items-center space-x-2 px-4 py-2 rounded-lg",
@@ -342,7 +355,7 @@ export function DevisHeader({
                 "disabled:opacity-50 disabled:cursor-not-allowed",
                 "hover:-translate-y-0.5"
               )}
-              title="Export PDF avec ordre de tri actuel"
+              title="Export PDF avec options"
             >
               <FileText className="w-4 h-4" />
               <span>Export PDF</span>
@@ -382,6 +395,14 @@ export function DevisHeader({
           </div>
         </div>
       </div>
+
+      {/* ✅ NOUVEAU: Modal d'export PDF */}
+      <PdfExportModal
+        isOpen={showPdfModal}
+        onClose={() => setShowPdfModal(false)}
+        onConfirm={handlePdfExport}
+        loading={pdfExporting}
+      />
 
       {/* Modal gestionnaire de statuts */}
       {devisId && (
