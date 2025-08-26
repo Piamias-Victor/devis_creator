@@ -76,7 +76,7 @@ export function ClientSelector({
   // Filtrer clients selon recherche
   const filteredClients = clients.filter(client =>
     client.nom.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.siret.includes(searchQuery) ||
+  (client.siret && client.siret.toLowerCase().includes(searchQuery.toLowerCase())) ||
     client.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -179,7 +179,7 @@ export function ClientSelector({
                     {client.nom}
                   </div>
                   <div className="text-sm text-gray-600 truncate">
-                    {client.email} • {client.siret}
+                    {client.email} • {client.siret || "SIRET non renseigné"}
                   </div>
                 </div>
               </button>

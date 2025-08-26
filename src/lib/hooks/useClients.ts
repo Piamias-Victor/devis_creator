@@ -27,7 +27,7 @@ const transformClientFromSupabase = (clientData: any): Client => {
     adresse: clientData.adresse,
     telephone: clientData.telephone,
     email: clientData.email,
-    siret: clientData.siret,
+    siret: clientData.siret || undefined, // MODIFIÉ: Gérer null/undefined
     createdAt: new Date(clientData.created_at || new Date().toISOString()) // Fallback si null
   };
 };
@@ -79,24 +79,30 @@ export function useClients(): UseClientsReturn {
     }
   }, [searchQuery]);
 
-  // Ajouter un client
+  // Ajouter un client - MODIFIÉ pour gérer SIRET optionnel
   const addClient = useCallback(async (clientData: ClientCreateInput): Promise<Client> => {
     try {
       setError(null);
       
+      console.log('🔄 Ajout client DB:', clientData);
+      
+      // MODIFIÉ: Gérer le SIRET optionnel correctement
+      const insertData: any = {
+        nom: clientData.nom,
+        adresse: clientData.adresse,
+        telephone: clientData.telephone,
+        email: clientData.email,
+        siret: clientData.siret || null // IMPORTANT: null au lieu d'undefined pour Supabase
+      };
+      
       const { data, error } = await supabase
         .from('clients')
-        .insert({
-          nom: clientData.nom,
-          adresse: clientData.adresse,
-          telephone: clientData.telephone,
-          email: clientData.email,
-          siret: clientData.siret
-        })
+        .insert(insertData)
         .select()
         .single();
 
       if (error) {
+        console.error('❌ Erreur Supabase insert:', error);
         handleSupabaseError(error);
       }
 
@@ -112,21 +118,26 @@ export function useClients(): UseClientsReturn {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erreur ajout client';
       setError(message);
+      console.error('❌ Erreur addClient complète:', err);
       throw err;
     }
   }, []);
 
-  // Mettre à jour un client
+  // Mettre à jour un client - MODIFIÉ pour gérer SIRET optionnel
   const updateClient = useCallback(async (id: string, updates: Partial<ClientCreateInput>): Promise<Client | null> => {
     try {
       setError(null);
 
+      // MODIFIÉ: Construction des données de mise à jour
       const updateData: any = {};
-      if (updates.nom) updateData.nom = updates.nom;
-      if (updates.adresse) updateData.adresse = updates.adresse;
-      if (updates.telephone) updateData.telephone = updates.telephone;
-      if (updates.email) updateData.email = updates.email;
-      if (updates.siret) updateData.siret = updates.siret;
+      if (updates.nom !== undefined) updateData.nom = updates.nom;
+      if (updates.adresse !== undefined) updateData.adresse = updates.adresse;
+      if (updates.telephone !== undefined) updateData.telephone = updates.telephone;
+      if (updates.email !== undefined) updateData.email = updates.email;
+      // IMPORTANT: Gérer SIRET optionnel - null si vide
+      if (updates.siret !== undefined) {
+        updateData.siret = updates.siret || null;
+      }
 
       const { data, error } = await supabase
         .from('clients')

@@ -24,6 +24,13 @@ interface FormData {
  * Validation et états de chargement
  */
 export function ClientForm({ client, onSubmit, onCancel, loading }: ClientFormProps) {
+  console.log('🔍 ClientForm - Props reçues:', {
+    client: client ? `Modification: ${client.nom}` : 'Création',
+    onSubmit: typeof onSubmit,
+    onCancel: typeof onCancel,
+    loading
+  });
+
   const [formData, setFormData] = useState<FormData>({
     nom: client?.nom || "",
     adresse: client?.adresse || "",
@@ -34,15 +41,16 @@ export function ClientForm({ client, onSubmit, onCancel, loading }: ClientFormPr
 
   const [errors, setErrors] = useState<Partial<FormData>>({});
 
-  // Validation simple
+  // Validation simple - SIRET rendu optionnel
   const validateForm = (): boolean => {
+    console.log('🔍 ClientForm - Validation des données:', formData);
+    
     const newErrors: Partial<FormData> = {};
     
     if (!formData.nom.trim()) newErrors.nom = "Le nom est requis";
     if (!formData.adresse.trim()) newErrors.adresse = "L'adresse est requise";
     if (!formData.telephone.trim()) newErrors.telephone = "Le téléphone est requis";
     if (!formData.email.trim()) newErrors.email = "L'email est requis";
-    if (!formData.siret.trim()) newErrors.siret = "Le SIRET est requis";
     
     // Validation email simple
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -50,12 +58,13 @@ export function ClientForm({ client, onSubmit, onCancel, loading }: ClientFormPr
       newErrors.email = "Format email invalide";
     }
     
-    // Validation SIRET (14 chiffres)
+    // Validation SIRET (14 chiffres) - MODIFIÉ: seulement si rempli
     const siretRegex = /^\d{14}$/;
-    if (formData.siret && !siretRegex.test(formData.siret.replace(/\s/g, ""))) {
+    if (formData.siret.trim() && !siretRegex.test(formData.siret.replace(/\s/g, ""))) {
       newErrors.siret = "SIRET invalide (14 chiffres)";
     }
 
+    console.log('🔍 ClientForm - Erreurs de validation:', newErrors);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -63,17 +72,46 @@ export function ClientForm({ client, onSubmit, onCancel, loading }: ClientFormPr
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    console.log('🚀 ClientForm - handleSubmit appelé');
+    console.log('📝 ClientForm - Données du formulaire:', formData);
     
-    onSubmit(formData);
+    if (!validateForm()) {
+      console.log('❌ ClientForm - Validation échouée');
+      return;
+    }
+    
+    console.log('✅ ClientForm - Validation réussie, appel onSubmit');
+    
+    try {
+      // Préparer les données selon l'interface attendue
+      const dataToSubmit: Omit<Client, "id" | "createdAt"> = {
+        nom: formData.nom.trim(),
+        adresse: formData.adresse.trim(),
+        telephone: formData.telephone.trim(),
+        email: formData.email.trim(),
+        siret: formData.siret.trim() || undefined // Gérer SIRET optionnel
+      };
+      
+      console.log('📤 ClientForm - Données envoyées:', dataToSubmit);
+      onSubmit(dataToSubmit);
+      console.log('✅ ClientForm - onSubmit exécuté avec succès');
+    } catch (error) {
+      console.error('❌ ClientForm - Erreur lors de l\'appel onSubmit:', error);
+    }
   };
 
   const handleChange = (field: keyof FormData, value: string) => {
+    console.log('📝 ClientForm - Changement field:', field, '=', value);
     setFormData(prev => ({ ...prev, [field]: value }));
     // Effacer l'erreur du champ modifié
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
+  };
+
+  const handleCancel = () => {
+    console.log('🚀 ClientForm - handleCancel appelé');
+    onCancel();
   };
 
   return (
@@ -171,10 +209,10 @@ export function ClientForm({ client, onSubmit, onCancel, loading }: ClientFormPr
         </div>
       </div>
 
-      {/* SIRET */}
+      {/* SIRET - MODIFIÉ: Plus obligatoire */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-          SIRET *
+          SIRET (optionnel)
         </label>
         <input
           type="text"
@@ -193,6 +231,9 @@ export function ClientForm({ client, onSubmit, onCancel, loading }: ClientFormPr
         {errors.siret && (
           <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.siret}</p>
         )}
+        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+          14 chiffres uniquement (optionnel)
+        </p>
       </div>
 
       {/* Actions */}
@@ -200,6 +241,7 @@ export function ClientForm({ client, onSubmit, onCancel, loading }: ClientFormPr
         <button
           type="submit"
           disabled={loading}
+          onClick={() => console.log('🔍 ClientForm - Bouton submit cliqué')}
           className={cn(
             "flex-1 py-3 px-6 rounded-lg font-medium transition-all duration-200",
             "bg-blue-600 hover:bg-blue-700 text-white",
@@ -213,7 +255,7 @@ export function ClientForm({ client, onSubmit, onCancel, loading }: ClientFormPr
         
         <button
           type="button"
-          onClick={onCancel}
+          onClick={handleCancel}
           disabled={loading}
           className={cn(
             "px-6 py-3 rounded-lg font-medium transition-all duration-200",

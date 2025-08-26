@@ -26,10 +26,40 @@ export function ClientModal({
   loading 
 }: ClientModalProps) {
   
+  // 🐛 DEBUG: Vérifier les props reçues
+  useEffect(() => {
+    if (isOpen) {
+      console.log('🔍 ClientModal ouverte - Props reçues:', {
+        isOpen,
+        onClose: typeof onClose,
+        onSubmit: typeof onSubmit,
+        client: client ? `Client: ${client.nom}` : 'Nouveau client',
+        loading
+      });
+    }
+  }, [isOpen, onClose, onSubmit, client, loading]);
+
+  // Fonction wrapper pour debug
+  const handleSubmit = (data: Omit<Client, "id" | "createdAt">) => {
+    console.log('🚀 ClientModal - handleSubmit appelé avec:', data);
+    try {
+      onSubmit(data);
+      console.log('✅ ClientModal - onSubmit exécuté');
+    } catch (error) {
+      console.error('❌ ClientModal - Erreur dans onSubmit:', error);
+    }
+  };
+
+  const handleClose = () => {
+    console.log('🔍 ClientModal - handleClose appelé');
+    onClose();
+  };
+
   // Gestion de la touche ESC
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen) {
+        console.log('⌨️ ClientModal - Touche ESC pressée');
         onClose();
       }
     };
@@ -59,7 +89,7 @@ export function ClientModal({
       <div className="flex min-h-full items-center justify-center p-4">
         <div 
           className="fixed inset-0 backdrop-blur-sm transition-opacity"
-          onClick={onClose}
+          onClick={handleClose}
         />
         
         {/* Modal content */}
@@ -70,13 +100,13 @@ export function ClientModal({
           "supports-[backdrop-filter]:bg-white"
         )}>
           {/* Header */}
-          <div className="flex  items-center justify-between p-6 border-b border-gray100">
+          <div className="flex items-center justify-between p-6 border-b border-gray-100">
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
               {client ? "Modifier le client" : "Nouveau client"}
             </h2>
             
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className={cn(
                 "p-2 rounded-lg transition-all duration-200",
                 "hover:bg-gray-200 text-gray-500 hover:text-gray-700",
@@ -91,8 +121,8 @@ export function ClientModal({
           <div className="p-6">
             <ClientForm
               client={client}
-              onSubmit={onSubmit}
-              onCancel={onClose}
+              onSubmit={handleSubmit}
+              onCancel={handleClose}
               loading={loading}
             />
           </div>

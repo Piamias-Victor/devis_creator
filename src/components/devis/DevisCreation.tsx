@@ -9,7 +9,7 @@ import { useClients } from "@/lib/hooks/useClients";
 import { useDevisSort } from "./table/useDevisSort";
 import { DevisRepository } from "@/lib/repositories/devisRepository";
 import { supabase } from "@/lib/database/supabase";
-import { getPharmaciesList } from "@/config/pharmacies"; // ✅ NOUVEAU: Import config pharmacies
+import { getPharmaciesList } from "@/config/pharmacies";
 
 const handleSaveLineToDatabase = async (ligne: DevisLine): Promise<void> => {
   try {
@@ -53,11 +53,11 @@ function DevisCreationCore() {
   const [dateCreation, setDateCreation] = useState(new Date());
   const [dateValidite, setDateValidite] = useState(new Date());
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [selectedPharmacieId, setSelectedPharmacieId] = useState<string>('rond-point'); // ✅ NOUVEAU: État pharmacie
+  const [selectedPharmacieId, setSelectedPharmacieId] = useState<string>('rond-point');
   const [saving, setSaving] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [loadingDevis, setLoadingDevis] = useState(false);
-  const [devisLoaded, setDevisLoaded] = useState(false); // GARDE anti-boucle
+  const [devisLoaded, setDevisLoaded] = useState(false);
 
   // Modal création client
   const [showClientModal, setShowClientModal] = useState(false);
@@ -83,7 +83,7 @@ function DevisCreationCore() {
   const sortDirection = sortData.sortDirection || 'asc';
 
   // Liste des pharmacies disponibles
-  const pharmaciesList = getPharmaciesList(); // ✅ NOUVEAU: Récupérer la liste des pharmacies
+  const pharmaciesList = getPharmaciesList();
 
   // FONCTION CORRIGÉE avec garde anti-boucle
   const loadDevisDetails = async (devisIdToLoad: string) => {
@@ -103,7 +103,7 @@ function DevisCreationCore() {
         setNumeroDevis(devis.numero);
         setDateCreation(devis.date);
         setDateValidite(devis.dateValidite);
-        setSelectedPharmacieId(devis.pharmacieId || 'rond-point'); // ✅ NOUVEAU: Charger la pharmacie
+        setSelectedPharmacieId(devis.pharmacieId || 'rond-point');
         
         // Récupération client via hook useClients
         if (devis.clientId && clients.length > 0) {
@@ -116,7 +116,7 @@ function DevisCreationCore() {
           }
         }
         
-        setDevisLoaded(true); // MARQUER COMME CHARGÉ
+        setDevisLoaded(true);
         console.log('✅ Détails devis chargés:', devis.numero, 'Pharmacie:', devis.pharmacieId);
       }
     } catch (error) {
@@ -142,7 +142,7 @@ function DevisCreationCore() {
       const now = new Date();
       setDateCreation(now);
       setDateValidite(calculateValidityDate(now));
-      setDevisLoaded(true); // Éviter re-initialisation
+      setDevisLoaded(true);
     }
   }, [devisId, clients, clientsLoading, devisLoaded]);
 
@@ -245,9 +245,64 @@ function DevisCreationCore() {
     setShowClientModal(true);
   };
 
-  // Sauvegarder nouveau client depuis modal
+  // Sauvegarder nouveau client depuis modal - IMPLÉMENTATION COMPLÈTE
   const handleSaveNewClient = async (clientData: Omit<Client, "id" | "createdAt">) => {
-    // Implémentation sauvegarde client
+    console.log('🔄 DevisCreation - handleSaveNewClient appelé avec:', clientData);
+    
+    setClientModalLoading(true);
+    
+    try {
+      // Insertion directe en base avec gestion du SIRET optionnel
+      // Cast vers any pour contourner les types Supabase stricts
+      const insertData: any = {
+        nom: clientData.nom,
+        adresse: clientData.adresse,
+        telephone: clientData.telephone,
+        email: clientData.email,
+        siret: clientData.siret || null // Gérer SIRET optionnel
+      };
+      
+      console.log('📤 DevisCreation - Insertion en base:', insertData);
+      
+      const { data, error } = await (supabase as any)
+        .from('clients')
+        .insert(insertData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ Erreur Supabase insert:', error);
+        throw new Error(error.message);
+      }
+
+      // Transformer les données pour l'interface avec vérification des nulls
+      const newClient: Client = {
+        id: data.id,
+        nom: data.nom,
+        adresse: data.adresse,
+        telephone: data.telephone,
+        email: data.email,
+        siret: data.siret || undefined,
+        createdAt: new Date(data.created_at || new Date().toISOString())
+      };
+      
+      console.log('✅ DevisCreation - Client créé:', newClient.nom);
+      
+      // Sélectionner automatiquement le nouveau client dans le devis
+      setSelectedClient(newClient);
+      
+      // Fermer le modal
+      setShowClientModal(false);
+      
+      console.log('✅ DevisCreation - Client sélectionné et modal fermé');
+      
+    } catch (error) {
+      console.error('❌ DevisCreation - Erreur création client:', error);
+      const message = error instanceof Error ? error.message : 'Erreur lors de la création';
+      alert(`Erreur lors de la création du client: ${message}`);
+    } finally {
+      setClientModalLoading(false);
+    }
   };
 
   // Ajouter un produit
@@ -255,7 +310,7 @@ function DevisCreationCore() {
     addLine(product);
   };
 
-  // ✅ NOUVEAU: Sauvegarder le devis AVEC PHARMACIE
+  // Sauvegarder le devis AVEC PHARMACIE
   const handleSave = async () => {
     if (!selectedClient) {
       alert("Veuillez sélectionner un client");
@@ -270,12 +325,12 @@ function DevisCreationCore() {
     setSaving(true);
     
     try {
-      // ✅ NOUVEAU: Passer pharmacieId à saveDevis
+      // Passer pharmacieId à saveDevis
       const savedDevisId = await saveDevis(
         selectedClient,
         dateValidite,
         undefined,
-        selectedPharmacieId // ✅ NOUVEAU: Passer la pharmacie sélectionnée
+        selectedPharmacieId
       );
       
       console.log("✅ Devis sauvegardé en Supabase:", savedDevisId, "Pharmacie:", selectedPharmacieId);
@@ -317,13 +372,13 @@ function DevisCreationCore() {
         sortedLignes={sortedLignes}
         sortField={sortField}
         sortDirection={sortDirection}
-        selectedPharmacieId={selectedPharmacieId} // ✅ NOUVEAU: Passer la pharmacie sélectionnée
-        pharmaciesList={pharmaciesList} // ✅ NOUVEAU: Passer la liste des pharmacies
-        onPharmacieChange={setSelectedPharmacieId} // ✅ NOUVEAU: Handler changement pharmacie
+        selectedPharmacieId={selectedPharmacieId}
+        pharmaciesList={pharmaciesList}
+        onPharmacieChange={setSelectedPharmacieId}
         onSave={handleSave}
         onCancel={handleCancel}
         onExportPDF={() => {
-          // ✅ NOUVEAU: Stocker pharmacieId dans sessionStorage pour le PDF
+          // Stocker pharmacieId dans sessionStorage pour le PDF
           if (selectedClient && lignes.length > 0) {
             const totaux = calculations;
             sessionStorage.setItem('pdfDevisData', JSON.stringify({
@@ -331,10 +386,10 @@ function DevisCreationCore() {
               date: dateCreation.toISOString(),
               dateValidite: dateValidite.toISOString(),
               client: selectedClient,
-              pharmacieId: selectedPharmacieId, // ✅ NOUVEAU: Inclure pharmacieId
+              pharmacieId: selectedPharmacieId,
               lines: lignes,
               totaux,
-              notes: '' // À gérer si vous avez des notes
+              notes: ''
             }));
             window.open('/devis/pdf', '_blank');
           }
